@@ -1,0 +1,23 @@
+# Python virtual environment
+backend/venv/
+
+# Environment variables
+backend/.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# SQLite database (if ever created)
+backend/db.sqlite3
+
+# Static and media files
+backend/media/
+backend/staticfiles/
+
+# IDE settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

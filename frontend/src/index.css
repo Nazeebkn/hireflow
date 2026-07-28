@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+
+@theme {
+  /* Primary Brand Colors */
+  --color-primary: #1E3A5F;
+  --color-primary-hover: #274B75;
+  --color-accent: #3B82F6;
+
+  /* Backgrounds */
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+
+  /* Text */
+  --color-text: #111827;
+  --color-text-secondary: #6B7280;
+
+  /* Borders */
+  --color-border: #E5E7EB;
+
+  /* Status */
+  --color-success: #10B981;
+  --color-error: #EF4444;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
