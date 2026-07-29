@@ -3,17 +3,27 @@ backend/venv/
 
 # Environment variables
 backend/.env
+frontend/.env
+.env
+*.env
 
 # Python cache
 __pycache__/
 *.py[cod]
 
-# SQLite database (if ever created)
+# SQLite database
 backend/db.sqlite3
 
 # Static and media files
 backend/media/
 backend/staticfiles/
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Build folders
+frontend/dist/
 
 # IDE settings
 .vscode/
