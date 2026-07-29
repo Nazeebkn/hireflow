@@ -92,7 +92,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         try:
             uid = force_str(urlsafe_base64_decode(uid))
             user = User.objects.get(pk=uid)
-        except Exception:
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             raise serializers.ValidationError(
                 "Invalid user."
             )
@@ -128,7 +128,22 @@ class GoogleLoginSerializer(serializers.Serializer):
     
     
     
-    
+class GoogleSignupSerializer(serializers.Serializer):
+
+    token = serializers.CharField()
+
+    role = serializers.ChoiceField(
+        choices=User.UserRole.choices
+    )
+
+    def validate(self, attrs):
+
+        if not attrs.get("token"):
+            raise serializers.ValidationError(
+                "Google token is required."
+            )
+
+        return attrs   
     
     
     

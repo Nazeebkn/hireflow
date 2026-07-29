@@ -25,6 +25,7 @@ from .serializers import (
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
     GoogleLoginSerializer,
+    GoogleSignupSerializer
 )
 
 from .services.auth_service import AuthService
@@ -165,52 +166,40 @@ class GoogleLoginAPIView(APIView):
     def post(self, request):
 
         serializer = GoogleLoginSerializer(data=request.data)
-
         serializer.is_valid(raise_exception=True)
 
-        token = serializer.validated_data["token"]
-
-        try:
-            id_info = id_token.verify_oauth2_token(
-                token,
-                requests.Request(),
-                settings.GOOGLE_CLIENT_ID,
-            )
-
-        except ValueError:
-            return Response(
-                {"error": "Invalid Google token."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-            
-        if not id_info.get("email_verified"):
-            return Response(
-                {"error": "Google email is not verified."},
-                status=status.HTTP_400_BAD_REQUEST,
-    )
-            
-        email = id_info["email"]
-     
-        
-        user = User.objects.filter(email=email).first()
-        
-        if not user:
-            user = User.objects.create_user(
-                email=email,
-                role=User.UserRole.CANDIDATE,
-            )
-        
-        refresh = RefreshToken.for_user(user)
+        result = AuthService.google_login(
+            serializer.validated_data["token"]
+        )
 
         return Response(
             {
                 "message": "Google login successful.",
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "user": {
-                    "email": user.email,
-                    "role": user.role,
-                }
+                **result,
             },
             status=status.HTTP_200_OK,
+        )
+                
+        
+class GoogleSignupAPIView(APIView):
+
+    def post(self, request):
+
+        serializer = GoogleSignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        serializer = GoogleSignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        result = AuthService.google_signup(
+            serializer.validated_data["token"],
+            serializer.validated_data["role"],
+        )
+
+        return Response(
+            {
+                "message": "Google signup successful.",
+                **result,
+            },
+            status=status.HTTP_201_CREATED,
         )

@@ -1,12 +1,58 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 import LoginCard from "../../components/auth/LoginCard";
 import AuthInput from "../../components/auth/AuthInput";
 import AuthButton from "../../components/auth/AuthButton";
+import { forgotPassword } from "../../services/authService";
+import { validateEmail } from "../../utils/validation";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const [errors, setErrors] = useState({
+    email: "",
+  });
+
+  const validateForm = () => {
+    const newErrors = {
+      email: validateEmail(email),
+    };
+
+    setErrors(newErrors);
+
+    return !newErrors.email;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await forgotPassword(email);
+
+      toast.success(data.message);
+
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        error.response?.data?.email?.[0] ||
+        "Failed to send reset link."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
@@ -35,18 +81,35 @@ function ForgotPassword() {
         </div>
 
         {/* Form */}
-        <form className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
           <AuthInput
             label="Email Address"
             type="email"
             placeholder="Enter your email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+
+              if (errors.email) {
+                setErrors((prev) => ({
+                  ...prev,
+                  email: "",
+                }));
+              }
+            }}
           />
 
-          <AuthButton type="submit">
-            Send Reset Link
+
+          {errors.email && (
+            <p className="text-sm text-red-500 -mt-3">
+              {errors.email}
+            </p>
+          )}
+
+          
+          <AuthButton type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Send Reset Link"}
           </AuthButton>
 
         </form>

@@ -10,6 +10,14 @@ class AuthRepository:
     @staticmethod
     def get_user_by_email(email):
         return User.objects.get(email=email)
+    
+    
+    @staticmethod
+    def create_google_user(email, role):
+        return User.objects.create_user(
+            email=email,
+            role=role,
+        )
 
     @staticmethod
     def get_user_by_email_or_none(email):

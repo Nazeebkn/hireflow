@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate  } from "react-router-dom";
+
+import { validateEmail } from "../../utils/validation";
+import { toast } from "sonner";
+import { GoogleLogin } from "@react-oauth/google";
+
 
 import AuthInput from "../../components/auth/AuthInput";
 import PasswordInput from "../../components/auth/PasswordInput";
@@ -9,8 +14,8 @@ import LoginCard from "../../components/auth/LoginCard";
 
 import { login } from "../../services/authService";
 
-
 function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -23,20 +28,12 @@ function Login() {
 
   const validateForm = () => {
     const newErrors = {
-      email: "",
+      email: validateEmail(email),
       password: "",
     };
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!emailPattern.test(email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
     if (!password.trim()) {
-      newErrors.password = "Password is required";
+      newErrors.password = "Password is required.";
     }
 
     setErrors(newErrors);
@@ -54,20 +51,33 @@ function Login() {
     setLoading(true);
 
     try {
-        const data = await login(email, password);
+      const data = await login(email, password);
 
-        localStorage.setItem("accessToken", data.access);
-        localStorage.setItem("refreshToken", data.refresh);
-        localStorage.setItem("user", JSON.stringify(data.user));
+      const storage = rememberMe ? localStorage : sessionStorage;
 
-        console.log("Login Successful");
+      storage.setItem("accessToken", data.access);
+      storage.setItem("refreshToken", data.refresh);
+      storage.setItem("user", JSON.stringify(data.user));
+
+      toast.success(data.message);
+
+      setTimeout(() => {
+        if (data.user.role === "CANDIDATE") {
+          navigate("/candidate/dashboard");
+        } else if (data.user.role === "COMPANY") {
+          navigate("/company/dashboard");
+        } else if (data.user.role === "ADMIN") {
+          navigate("/admin/dashboard");
+        }
+      }, 1000);
 
     } catch (error) {
-        console.error("Login Failed:", error);
-
+      toast.error(
+        error.response?.data?.message || "Invalid email or password."
+      );
     } finally {
-        setLoading(false);
-        }
+      setLoading(false);
+    }
   };
 
   return(
