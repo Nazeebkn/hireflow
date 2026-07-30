@@ -21,7 +21,7 @@ class AuthService:
 
         except User.DoesNotExist:
             raise serializers.ValidationError({
-                "email": ["User with this email does not exist."]
+                "message": "No account found with this email."
             })
 
         token_generator = PasswordResetTokenGenerator()
@@ -157,9 +157,8 @@ class AuthService:
         user = AuthRepository.get_user_by_email_or_none(email)
 
         if not user:
-            raise serializers.ValidationError(
-                "Account not found. Please sign up using Google first."
-            )
+            raise serializers.ValidationError({
+                    "message": "Account not found. Please sign up using Google first."})
 
         refresh = RefreshToken.for_user(user)
 

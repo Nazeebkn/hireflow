@@ -12,7 +12,7 @@ import AuthButton from "../../components/auth/AuthButton";
 import BrandingPanel from "../../components/auth/BrandingPanel";
 import LoginCard from "../../components/auth/LoginCard";
 
-import { login } from "../../services/authService";
+import { login, googleLogin } from "../../services/authService";
 
 function Login() {
   const navigate = useNavigate();
@@ -151,19 +151,48 @@ function Login() {
       <div className="flex-grow border-t border-border"></div>
     </div>
 
-    <button
-      type="button"
-      className="w-full rounded-xl border border-border bg-background py-3 font-medium transition hover:bg-surface"
-    >
-      Continue with Google
-    </button>
+    <GoogleLogin
+    onSuccess={async (credentialResponse) => {
+    try {
+      setLoading(true);
 
-    <button
-      type="button"
-      className="w-full rounded-xl border border-border bg-background py-3 font-medium transition hover:bg-surface"
-    >
-      Continue with Microsoft
-    </button>
+      const data = await googleLogin(
+        credentialResponse.credential
+      );
+
+      const storage = rememberMe
+        ? localStorage
+        : sessionStorage;
+
+      storage.setItem("accessToken", data.access);
+      storage.setItem("refreshToken", data.refresh);
+      storage.setItem("user", JSON.stringify(data.user));
+
+      toast.success(data.message);
+
+      setTimeout(() => {
+        if (data.user.role === "CANDIDATE") {
+          navigate("/candidate/dashboard");
+        } else if (data.user.role === "COMPANY") {
+          navigate("/company/dashboard");
+        } else if (data.user.role === "ADMIN") {
+          navigate("/admin/dashboard");
+        }
+      }, 1000);
+
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+        "Google Login Failed."
+      );
+    } finally {
+      setLoading(false);
+    }
+    }}
+    onError={() => {
+    toast.error("Google Login Failed.");
+    }}
+    />
 
     <p className="text-center text-sm text-text-secondary">
       Don't have an account?{" "}

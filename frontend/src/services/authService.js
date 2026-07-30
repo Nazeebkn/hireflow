@@ -60,3 +60,13 @@ export const googleSignup = async (token, role) => {
 
   return response.data;
 };
+
+
+
+export const googleLogin = async (token) => {
+  const response = await api.post("/auth/google-login/", {
+    token,
+  });
+
+  return response.data;
+};

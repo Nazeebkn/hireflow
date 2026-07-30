@@ -41,18 +41,15 @@ function ForgotPassword() {
 
       toast.success(data.message);
 
-    } catch (error) {
-      console.error(error);
+   } catch (error) {
+  console.log("Status:", error.response?.status);
+  console.log("Data:", error.response?.data);
 
-      toast.error(
-        error.response?.data?.email?.[0] ||
-        "Failed to send reset link."
-      );
-
-    } finally {
-      setLoading(false);
-    }
-  };
+  toast.error(
+    error.response?.data?.message || "Something went wrong."
+  );
+}
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">

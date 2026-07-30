@@ -2,6 +2,7 @@ import { useState } from "react";
 
 function PasswordInput({
   label,
+  name,
   placeholder,
   value,
   onChange,
@@ -17,10 +18,11 @@ function PasswordInput({
       <div className="relative">
         <input
           type={showPassword ? "text" : "password"}
-          placeholder={placeholder}
+          name={name}
           value={value}
           onChange={onChange}
-          className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-12 outline-none transition-all duration-200 focus:border-primary"
+          placeholder={placeholder}
+          className="w-full border rounded-lg p-3"
         />
 
         <button
