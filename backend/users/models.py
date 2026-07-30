@@ -19,6 +19,8 @@ class User(AbstractBaseUser, PermissionsMixin):
                             choices=UserRole.choices,
                             default=UserRole.CANDIDATE )
     
+    profile_completed = models.BooleanField(default=False)
+    
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
