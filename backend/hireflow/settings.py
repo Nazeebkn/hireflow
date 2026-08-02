@@ -50,6 +50,10 @@ INSTALLED_APPS = [
     'candidate_app',
     'core',
     "rest_framework_simplejwt.token_blacklist",
+    
+      # Cloudinary
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 
@@ -154,6 +158,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 AUTH_USER_MODEL = "users.User"
 
