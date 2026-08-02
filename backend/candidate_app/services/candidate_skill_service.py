@@ -6,6 +6,9 @@ from candidate_app.repositories.candidate_profile_repository import (
 from candidate_app.repositories.candidate_skill_repository import (
     CandidateSkillRepository,
 )
+from candidate_app.repositories.skill_repository import (
+    SkillRepository,
+)
 
 
 class CandidateSkillService:
@@ -18,11 +21,19 @@ class CandidateSkillService:
         if not profile:
             raise NotFound("Candidate profile not found.")
 
+        if "skill_name" in validated_data:
+
+            skill = SkillRepository.get_or_create(
+                validated_data.pop("skill_name")
+            )
+
+            validated_data["skill"] = skill
+
         return CandidateSkillRepository.create(
             profile,
             validated_data
         )
-
+        
     @staticmethod
     def get_all_skills(user):
 

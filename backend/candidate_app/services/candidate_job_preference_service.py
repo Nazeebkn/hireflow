@@ -23,15 +23,17 @@ class CandidateJobPreferenceService:
         )
 
         if preference:
-            raise ValidationError(
-                "Job preference already exists."
+
+            return CandidateJobPreferenceRepository.update(
+                preference,
+                validated_data
             )
 
         return CandidateJobPreferenceRepository.create(
             profile,
             validated_data
-        )
-
+)
+        
     @staticmethod
     def get_preference(user):
 

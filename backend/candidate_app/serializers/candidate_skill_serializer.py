@@ -4,7 +4,6 @@ from candidate_app.models import CandidateSkill
 
 
 class CandidateSkillSerializer(serializers.ModelSerializer):
-    
 
     skill_name = serializers.CharField(
         source="skill.name",

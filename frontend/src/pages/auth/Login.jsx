@@ -5,6 +5,8 @@ import { validateEmail } from "../../utils/validation";
 import { toast } from "sonner";
 import { GoogleLogin } from "@react-oauth/google";
 
+import FullScreenLoader from "../../components/common/FullScreenLoader";
+
 
 import AuthInput from "../../components/auth/AuthInput";
 import PasswordInput from "../../components/auth/PasswordInput";
@@ -20,6 +22,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const [errors, setErrors] = useState({
     email: "",
@@ -61,9 +64,11 @@ function Login() {
 
       toast.success(data.message);
 
+      setRedirecting(true);
+
       setTimeout(() => {
         if (data.user.role === "CANDIDATE") {
-          navigate("/candidate/dashboard");
+          navigate("/candidate/profile-completion");
         } else if (data.user.role === "COMPANY") {
           navigate("/company/dashboard");
         } else if (data.user.role === "ADMIN") {
@@ -80,6 +85,13 @@ function Login() {
     }
   };
 
+    if (redirecting) {
+    return (
+      <FullScreenLoader
+        title="Setting up your workspace..."
+      />
+    );
+  }
   return(
 
   
@@ -169,16 +181,18 @@ function Login() {
       storage.setItem("user", JSON.stringify(data.user));
 
       toast.success(data.message);
+      
+      setRedirecting(true);
 
       setTimeout(() => {
         if (data.user.role === "CANDIDATE") {
-          navigate("/candidate/dashboard");
+         navigate("/candidate/profile-completion");
         } else if (data.user.role === "COMPANY") {
           navigate("/company/dashboard");
         } else if (data.user.role === "ADMIN") {
           navigate("/admin/dashboard");
         }
-      }, 1000);
+      }, 800);
 
     } catch (error) {
       toast.error(

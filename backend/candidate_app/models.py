@@ -98,11 +98,20 @@ class CandidateEducation(models.Model):
 
     institution_name = models.CharField(max_length=255)
 
-    field_of_study = models.CharField(max_length=255)
+    field_of_study = models.CharField(
+        max_length=255,
+        blank=True
+    )
 
-    start_date = models.DateField()
+    start_date = models.DateField(
+        null=True,
+        blank=True
+    )
 
-    end_date = models.DateField()
+    end_date = models.DateField(
+        null=True,
+        blank=True
+    )
 
     score = models.CharField(
         max_length=50,
@@ -131,9 +140,15 @@ class CandidateExperience(models.Model):
         related_name="experiences"
     )
 
-    company_name = models.CharField(max_length=255)
+    company_name = models.CharField(
+        max_length=255,
+        blank=True
+    )
 
-    job_title = models.CharField(max_length=255)
+    job_title = models.CharField(
+        max_length=255,
+        blank=True
+    )
 
     employment_type = models.CharField(
         max_length=50,
@@ -145,7 +160,10 @@ class CandidateExperience(models.Model):
         blank=True
     )
 
-    start_date = models.DateField()
+    start_date = models.DateField(
+        null=True,
+        blank=True
+    )
 
     end_date = models.DateField(
         null=True,

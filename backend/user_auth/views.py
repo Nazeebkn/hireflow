@@ -164,6 +164,8 @@ class ResetPasswordAPIView(APIView):
 class GoogleLoginAPIView(APIView):
 
     def post(self, request):
+        print("GOOGLE LOGIN VIEW HIT")
+
 
         serializer = GoogleLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
