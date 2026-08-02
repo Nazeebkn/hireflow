@@ -17,6 +17,7 @@ backend/db.sqlite3
 # Static and media files
 backend/media/
 backend/staticfiles/
+backend/candidate/
 
 # Node modules
 node_modules/
