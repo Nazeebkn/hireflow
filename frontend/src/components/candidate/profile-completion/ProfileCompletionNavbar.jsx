@@ -21,7 +21,7 @@ function ProfileCompletionNavbar() {
             </h1>
 
             <p className="text-[11px] text-text-secondary">
-              Candidate Profile Setup
+               Profile Setup
             </p>
           </div>
 

@@ -7,6 +7,8 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from google.oauth2 import id_token
 from google.auth.transport import requests
+from company_app.models import Company
+
 
 from user_auth.repositories.auth_repository import AuthRepository
 from users.models import User
@@ -79,6 +81,16 @@ class AuthService:
 
         refresh = RefreshToken.for_user(user)
 
+        profile_completed = False
+        approval_status = None
+
+        if user.role == "COMPANY":
+            company = Company.objects.filter(user=user).first()
+
+            if company:
+                profile_completed = True
+                approval_status = company.approval_status
+
         return {
             "message": "Login successful.",
             "refresh": str(refresh),
@@ -87,6 +99,8 @@ class AuthService:
                 "id": user.id,
                 "email": user.email,
                 "role": user.role,
+                "profile_completed": profile_completed,
+                "approval_status": approval_status,
             }
         }
         

@@ -795,3 +795,108 @@ export const validateWorkMode = (
 
   return "";
 };
+
+
+
+export const validateCompanyName = (companyName) => {
+  const value = (companyName || "").trim();
+
+  if (!value) {
+    return "Company Name is required.";
+  }
+
+  if (companyName !== value) {
+    return "Company Name cannot start or end with spaces.";
+  }
+
+  if (/\s{2,}/.test(value)) {
+    return "Company Name cannot contain multiple consecutive spaces.";
+  }
+
+  if (value.length < 2) {
+    return "Company Name must be at least 2 characters.";
+  }
+
+  if (value.length > 100) {
+    return "Company Name cannot exceed 100 characters.";
+  }
+
+  if (!/^[A-Za-z]/.test(value)) {
+    return "Company Name must start with a letter.";
+  }
+
+  if (!/^[A-Za-z][A-Za-z0-9\s.'&(),/-]*$/.test(value)) {
+    return "Company Name contains invalid characters.";
+  }
+
+  if (/^(.)\1+$/i.test(value.replace(/\s/g, ""))) {
+    return "Please enter a valid Company Name.";
+  }
+
+  return "";
+};
+
+
+export const validateContactPerson = (contactPerson) => {
+  return validateName(
+    contactPerson,
+    "Contact Person"
+  );
+};
+
+
+export const validateContactPhone = (phone) => {
+  return validatePhone(phone);
+};
+
+
+export const validateWebsite = (website) => {
+  const value = (website || "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  if (website !== value) {
+    return "Website cannot start or end with spaces.";
+  }
+
+  try {
+    new URL(value);
+  } catch {
+    return "Please enter a valid website URL.";
+  }
+
+  return "";
+};
+
+
+export const validateDescription = (description) => {
+  const value = (description || "").trim();
+
+  if (!value) {
+    return "Company Description is required.";
+  }
+
+  if (description !== value) {
+    return "Company Description cannot start or end with spaces.";
+  }
+
+  if (/\s{2,}/.test(value)) {
+    return "Company Description cannot contain multiple consecutive spaces.";
+  }
+
+  if (value.length < 20) {
+    return "Company Description must be at least 20 characters.";
+  }
+
+  if (value.length > 1000) {
+    return "Company Description cannot exceed 1000 characters.";
+  }
+
+  if (!/[A-Za-z]/.test(value)) {
+    return "Company Description must contain meaningful text.";
+  }
+
+  return "";
+};

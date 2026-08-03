@@ -67,14 +67,28 @@ function Login() {
       setRedirecting(true);
 
       setTimeout(() => {
-        if (data.user.role === "CANDIDATE") {
-          navigate("/candidate/profile-completion");
-        } else if (data.user.role === "COMPANY") {
-          navigate("/company/dashboard");
-        } else if (data.user.role === "ADMIN") {
-          navigate("/admin/dashboard");
-        }
-      }, 1000);
+  if (data.user.role === "CANDIDATE") {
+    navigate("/candidate/profile-completion");
+
+  } else if (data.user.role === "COMPANY") {
+
+    if (!data.user.profile_completed) {
+      navigate("/company/profile-completion");
+
+    } else if (data.user.approval_status === "PENDING") {
+      navigate("/company/pending-approval");
+
+    } else if (data.user.approval_status === "APPROVED") {
+      navigate("/company/dashboard");
+
+    } else if (data.user.approval_status === "REJECTED") {
+      navigate("/company/profile-completion");
+    }
+
+  } else if (data.user.role === "ADMIN") {
+    navigate("/admin/dashboard");
+  }
+}, 1000);
 
     } catch (error) {
       toast.error(
@@ -184,15 +198,29 @@ function Login() {
       
       setRedirecting(true);
 
-      setTimeout(() => {
-        if (data.user.role === "CANDIDATE") {
-         navigate("/candidate/profile-completion");
-        } else if (data.user.role === "COMPANY") {
-          navigate("/company/dashboard");
-        } else if (data.user.role === "ADMIN") {
-          navigate("/admin/dashboard");
-        }
-      }, 800);
+setTimeout(() => {
+  if (data.user.role === "CANDIDATE") {
+    navigate("/candidate/profile-completion");
+
+  } else if (data.user.role === "COMPANY") {
+
+    if (!data.user.profile_completed) {
+      navigate("/company/profile-completion");
+
+    } else if (data.user.approval_status === "PENDING") {
+      navigate("/company/pending-approval");
+
+    } else if (data.user.approval_status === "APPROVED") {
+      navigate("/company/dashboard");
+
+    } else if (data.user.approval_status === "REJECTED") {
+      navigate("/company/profile-completion");
+    }
+
+  } else if (data.user.role === "ADMIN") {
+    navigate("/admin/dashboard");
+  }
+}, 800);
 
     } catch (error) {
       toast.error(

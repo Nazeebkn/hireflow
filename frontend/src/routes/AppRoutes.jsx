@@ -6,7 +6,7 @@ import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
-
+import CompanyRoutes from "./CompanyRoutes";
 import CandidateRoutes from "./CandidateRoutes";
 
 function AppRoutes() {
@@ -43,6 +43,9 @@ function AppRoutes() {
       {/* Candidate */}
       {CandidateRoutes()}
 
+
+      {/* Company */}
+      {CompanyRoutes()}
     </Routes>
   );
 }
