@@ -8,6 +8,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 import CompanyRoutes from "./CompanyRoutes";
 import CandidateRoutes from "./CandidateRoutes";
+import AdminRoutes from "./AdminRoutes";
 
 function AppRoutes() {
   return (
@@ -46,6 +47,10 @@ function AppRoutes() {
 
       {/* Company */}
       {CompanyRoutes()}
+
+
+      {/* Admin */}
+      {AdminRoutes()}
     </Routes>
   );
 }
