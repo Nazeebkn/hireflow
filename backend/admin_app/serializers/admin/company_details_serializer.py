@@ -24,5 +24,6 @@ class CompanyDetailsSerializer(serializers.ModelSerializer):
             "company_logo",
             "verification_document",
             "approval_status",
+            "rejection_reason",
             "created_at",
         ]
