@@ -10,8 +10,16 @@ from admin_app.services.admin.reject_company_service import (
     RejectCompanyService,
 )
 
+from rest_framework.permissions import IsAuthenticated
+
+from admin_app.permissions import IsAdminUser
 
 class RejectCompanyAPIView(APIView):
+    
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminUser,
+    ]
 
     def patch(self, request, company_id):
 

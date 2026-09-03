@@ -1,5 +1,7 @@
 import { Route } from "react-router-dom";
 
+import ProtectedRoute from "./ProtectedRoute";
+
 import Dashboard from "../pages/admin/Dashboard";
 import PendingCompanies from "../pages/admin/PendingCompanies";
 import PendingCompanyDetails from "../pages/admin/PendingCompanyDetails";
@@ -10,42 +12,47 @@ import CandidateDetails from "../pages/admin/CandidateDetails";
 
 function AdminRoutes() {
   return (
-    <>
+    <Route
+      path="/admin"
+      element={
+        <ProtectedRoute allowedRole="ADMIN" />
+      }
+    >
       <Route
-        path="/admin/dashboard"
+        path="dashboard"
         element={<Dashboard />}
       />
 
       <Route
-        path="/admin/pending-companies"
+        path="pending-companies"
         element={<PendingCompanies />}
       />
 
       <Route
-        path="/admin/pending-companies/:companyId"
+        path="pending-companies/:companyId"
         element={<PendingCompanyDetails />}
       />
 
       <Route
-        path="/admin/companies"
+        path="companies"
         element={<Companies />}
       />
 
       <Route
-        path="/admin/companies/:companyId"
+        path="companies/:companyId"
         element={<CompanyDetails />}
       />
 
       <Route
-        path="/admin/candidates"
+        path="candidates"
         element={<Candidates />}
-        />
+      />
 
-        <Route
-        path="/admin/candidates/:candidateId"
+      <Route
+        path="candidates/:candidateId"
         element={<CandidateDetails />}
-        />
-    </>
+      />
+    </Route>
   );
 }
 

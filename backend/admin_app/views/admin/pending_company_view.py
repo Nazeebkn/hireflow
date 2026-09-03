@@ -10,8 +10,17 @@ from admin_app.serializers.admin.pending_company_serializer import (
     PendingCompanySerializer,
 )
 
+from rest_framework.permissions import IsAuthenticated
+
+from admin_app.permissions import IsAdminUser
+
 
 class PendingCompanyListAPIView(APIView):
+    
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminUser,
+    ]
 
     def get(self, request):
 

@@ -10,8 +10,17 @@ from admin_app.services.admin.user_status_service import (
     UserStatusService,
 )
 
+from rest_framework.permissions import IsAuthenticated
+
+from admin_app.permissions import IsAdminUser
+
 
 class UserStatusAPIView(APIView):
+    
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminUser,
+    ]
 
     def patch(self, request, user_id):
 

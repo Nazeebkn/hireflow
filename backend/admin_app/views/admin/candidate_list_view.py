@@ -10,8 +10,16 @@ from admin_app.serializers.admin.candidate_list_serializer import (
     CandidateListSerializer,
 )
 
+from rest_framework.permissions import IsAuthenticated
+
+from admin_app.permissions import IsAdminUser
 
 class CandidateListAPIView(APIView):
+    
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminUser,
+    ]
 
     def get(self, request):
 
