@@ -33,3 +33,12 @@ export const getCandidateProfile = async () => {
   const response = await api.get("/candidate/profile/");
   return response.data;
 };
+
+
+export const completeCandidateProfile = async () => {
+  const response = await api.patch(
+    "/candidate/profile-completion/complete/"
+  );
+
+  return response.data;
+};

@@ -124,6 +124,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+PASSWORD_RESET_TIMEOUT = 60  # 30 minutes
+
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 

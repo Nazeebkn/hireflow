@@ -1,36 +1,56 @@
-import { Eye } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Eye, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const candidates = [
-  {
-    id: 1,
-    name: "Nazeeb K",
-    role: "Frontend Developer",
-    registered_on: "04 Aug 2026",
-  },
-  {
-    id: 2,
-    name: "Rahul Raj",
-    role: "Backend Developer",
-    registered_on: "03 Aug 2026",
-  },
-  {
-    id: 3,
-    name: "Anjali",
-    role: "UI/UX Designer",
-    registered_on: "02 Aug 2026",
-  },
-];
+import { getCandidates } from "../../../services/admin/adminService";
 
 function RecentCandidatesTable() {
+  const navigate = useNavigate();
+
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCandidates = async () => {
+    try {
+      setLoading(true);
+
+      const data = await getCandidates("", 1);
+
+      console.log("Recent Candidates:", data);
+
+      // Latest 5 candidates only
+      setCandidates(
+        Array.isArray(data) ? data.slice(0, 3) : []
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch recent candidates:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
   return (
-    <section className="rounded-2xl border border-border bg-surface shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+
+      {/* Header */}
 
       <div className="flex items-center justify-between border-b border-border p-6">
 
         <div>
 
-          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200">
+
+            <Users size={13} />
+
             Latest
+
           </span>
 
           <h2 className="mt-3 text-xl font-semibold text-text-primary">
@@ -38,12 +58,14 @@ function RecentCandidatesTable() {
           </h2>
 
           <p className="mt-1 text-sm text-text-secondary">
-            Recently registered candidates on HireFlow.
+            Latest candidates registered on HireFlow.
           </p>
 
         </div>
 
       </div>
+
+      {/* Candidates */}
 
       <div className="overflow-x-auto">
 
@@ -53,23 +75,23 @@ function RecentCandidatesTable() {
 
             <tr>
 
-              <th className="px-6 py-4 text-left text-sm font-semibold">
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
                 Candidate
               </th>
 
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                Role
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                Location
               </th>
 
-              <th className="px-6 py-4 text-left text-sm font-semibold">
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
                 Registered
               </th>
 
-              <th className="px-6 py-4 text-left text-sm font-semibold">
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
                 Status
               </th>
 
-              <th className="px-6 py-4 text-center text-sm font-semibold">
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-text-secondary">
                 Action
               </th>
 
@@ -79,44 +101,130 @@ function RecentCandidatesTable() {
 
           <tbody>
 
-            {candidates.map((candidate) => (
-              <tr
-                key={candidate.id}
-                className="border-t border-border transition hover:bg-gray-50"
-              >
+            {loading ? (
 
-                <td className="px-6 py-5 font-medium">
-                  {candidate.name}
-                </td>
+              <tr>
 
-                <td className="px-6 py-5">
-                  {candidate.role}
-                </td>
-
-                <td className="px-6 py-5">
-                  {candidate.registered_on}
-                </td>
-
-                <td className="px-6 py-5">
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                    Registered
-                  </span>
-                </td>
-
-                <td className="px-6 py-5 text-center">
-
-                  <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90">
-
-                    <Eye size={18} />
-
-                    View
-
-                  </button>
-
+                <td
+                  colSpan="5"
+                  className="px-6 py-12 text-center text-sm text-text-secondary"
+                >
+                  Loading recent candidates...
                 </td>
 
               </tr>
-            ))}
+
+            ) : candidates.length === 0 ? (
+
+              <tr>
+
+                <td
+                  colSpan="5"
+                  className="px-6 py-12 text-center text-sm text-text-secondary"
+                >
+                  No candidates registered yet.
+                </td>
+
+              </tr>
+
+            ) : (
+
+              candidates.map((candidate) => (
+
+                <tr
+                  key={candidate.id}
+                  className="border-t border-border transition hover:bg-gray-50/70"
+                >
+
+                  {/* Candidate */}
+
+                  <td className="px-6 py-5">
+
+                    <div className="font-semibold text-text-primary">
+                      {candidate.first_name}{" "}
+                      {candidate.last_name}
+                    </div>
+
+                    {candidate.email && (
+                      <div className="mt-1 text-xs text-text-secondary">
+                        {candidate.email}
+                      </div>
+                    )}
+
+                  </td>
+
+                  {/* Location */}
+
+                  <td className="px-6 py-5 text-sm text-text-secondary">
+                    {candidate.location || "—"}
+                  </td>
+
+                  {/* Registered */}
+
+                  <td className="px-6 py-5 text-sm text-text-secondary">
+
+                    {candidate.created_at
+                      ? new Date(
+                          candidate.created_at
+                        ).toLocaleDateString("en-GB")
+                      : "—"}
+
+                  </td>
+
+                  {/* Status */}
+
+                  <td className="px-6 py-5">
+
+                    {candidate.is_active === false ? (
+
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+
+                        Suspended
+
+                      </span>
+
+                    ) : (
+
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
+                        Active
+
+                      </span>
+
+                    )}
+
+                  </td>
+
+                  {/* Action */}
+
+                  <td className="px-6 py-5 text-center">
+
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/admin/candidates/${candidate.id}`
+                        )
+                      }
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+                    >
+
+                      <Eye size={17} />
+
+                      View
+
+                    </button>
+
+                  </td>
+
+                </tr>
+
+              ))
+
+            )}
 
           </tbody>
 
@@ -124,9 +232,16 @@ function RecentCandidatesTable() {
 
       </div>
 
+      {/* Footer */}
+
       <div className="flex items-center justify-end border-t border-border p-5">
 
-        <button className="text-sm font-semibold text-primary hover:underline">
+        <button
+          onClick={() =>
+            navigate("/admin/candidates")
+          }
+          className="text-sm font-semibold text-primary transition hover:underline"
+        >
           View All Candidates →
         </button>
 

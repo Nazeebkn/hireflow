@@ -14,9 +14,7 @@ class CompanyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_company(self):
-        """
-        Return the logged-in user's company profile.
-        """
+       
         return CompanyService.get_company_profile(self.request.user)
 
     def post(self, request):

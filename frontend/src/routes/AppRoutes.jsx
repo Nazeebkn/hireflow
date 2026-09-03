@@ -9,6 +9,8 @@ import ResetPassword from "../pages/auth/ResetPassword";
 import CompanyRoutes from "./CompanyRoutes";
 import CandidateRoutes from "./CandidateRoutes";
 import AdminRoutes from "./AdminRoutes";
+import VerifyEmail from "../pages/auth/VerifyEmail";
+
 
 function AppRoutes() {
   return (
@@ -40,6 +42,11 @@ function AppRoutes() {
         path="/reset-password/:uid/:token"
         element={<ResetPassword />}
       />
+
+      <Route
+      path="/verify-email/:uid/:token/"
+      element={<VerifyEmail />}
+    />
 
       {/* Candidate */}
       {CandidateRoutes()}

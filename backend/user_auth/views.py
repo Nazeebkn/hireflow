@@ -37,8 +37,35 @@ class SignupAPIView(APIView):
         
         if serializer.is_valid():
 
-            AuthService.signup(serializer.validated_data)
+            user, token = AuthService.signup(
+                serializer.validated_data
+            )
+            
+            uid = urlsafe_base64_encode(
+                force_bytes(user.pk)
+            )
 
+            verification_link = (
+                f"http://localhost:5173/verify-email/{uid}/{token}/"
+            )
+
+            send_mail(
+                subject="Verify your HireFlow account",
+                message=f"""
+            Hello,
+
+            Please click the link below to verify your HireFlow account:
+
+            {verification_link}
+
+            This verification link will expire in 30 minutes.
+
+            If you did not create this account, please ignore this email.
+            """,
+                from_email=None,
+                recipient_list=[user.email],
+            )
+            
             return Response(
                 {"message": "Account created successfully"},
                 status=status.HTTP_201_CREATED
@@ -204,4 +231,22 @@ class GoogleSignupAPIView(APIView):
                 **result,
             },
             status=status.HTTP_201_CREATED,
+        )
+        
+
+
+class VerifyEmailAPIView(APIView):
+
+    def get(self, request, uid, token):
+
+        AuthService.verify_email(
+            uid,
+            token
+        )
+
+        return Response(
+            {
+                "message": "Email verified successfully."
+            },
+            status=status.HTTP_200_OK
         )

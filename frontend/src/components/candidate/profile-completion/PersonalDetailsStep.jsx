@@ -1,7 +1,7 @@
 import AuthInput from "../../auth/AuthInput";
 import { Camera, UploadCloud } from "lucide-react";
 import { validateProfilePhoto } from "../../../utils/validation";
-
+import imageCompression from "browser-image-compression";
 import { useEffect, useState } from "react";
 
 function PersonalDetailsStep({ formData, errors, onChange, onPhotoChange }) {
@@ -20,23 +20,59 @@ function PersonalDetailsStep({ formData, errors, onChange, onPhotoChange }) {
     return () => URL.revokeObjectURL(objectUrl);
   }, [formData.profile_picture]);
 
-  const handlePhotoUpload = (event) => {
-    const file = event.target.files?.[0];
+const handlePhotoUpload = async (event) => {
+  const file = event.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    const error = validateProfilePhoto(file);
+  const error = validateProfilePhoto(file);
 
-    if (error) {
-      onPhotoChange(null, error);
-      event.target.value = "";
-      return;
-    }
-    onPhotoChange(file);
-
-    // Reset input
+  if (error) {
+    onPhotoChange(null, error);
     event.target.value = "";
-  };
+    return;
+  }
+
+  try {
+    const options = {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1200,
+      useWebWorker: true,
+      fileType: "image/jpeg",
+    };
+
+    const compressedBlob = await imageCompression(
+      file,
+      options
+    );
+
+    const compressedFile = new File(
+      [compressedBlob],
+      "profile-picture.jpg",
+      {
+        type: "image/jpeg",
+        lastModified: Date.now(),
+      }
+    );
+
+    console.log("Original size:", (file.size / 1024).toFixed(2), "KB");
+    console.log(
+      "Compressed size:",
+      (compressedFile.size / 1024).toFixed(2),
+      "KB"
+    );
+    console.log("Compressed file:", compressedFile);
+
+    onPhotoChange(compressedFile);
+
+  } catch (error) {
+    console.error("Image compression failed:", error);
+
+    onPhotoChange(file);
+  }
+
+  event.target.value = "";
+};
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-12 gap-4">

@@ -12,3 +12,19 @@ class CandidateJobPreferenceSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+    def validate_employment_type(self, value):
+
+        valid_types = [
+            "FULL_TIME",
+            "PART_TIME", 
+            "CONTRACT",
+            "INTERNSHIP",
+        ]
+
+        if value not in valid_types:
+            raise serializers.ValidationError(
+                "Please select a valid Employment Type."
+            )
+
+        return value

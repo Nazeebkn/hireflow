@@ -9,7 +9,9 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from company_app.models import Company
 
-
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
 from user_auth.repositories.auth_repository import AuthRepository
 from users.models import User
 
@@ -38,7 +40,15 @@ class AuthService:
 
         send_mail(
             subject="Reset Your Password",
-            message=f"Click the link below to reset your password.\n\n{reset_link}",
+            message=f"""
+            Click the link below to reset your password:
+
+            {reset_link}
+
+            This password reset link will expire in 30 minutes.
+
+            If you did not request a password reset, please ignore this email.
+            """,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=False,
@@ -59,7 +69,11 @@ class AuthService:
     @staticmethod
     def signup(validated_data):
 
-        return AuthRepository.create_user(validated_data)
+        user = AuthRepository.create_user(validated_data)
+
+        token = default_token_generator.make_token(user)
+
+        return user, token
         
         
     
@@ -69,26 +83,50 @@ class AuthService:
         email = validated_data["email"]
         password = validated_data["password"]
 
+        db_user = AuthRepository.get_user_by_email_or_none(email)
+
+        if not db_user:
+            raise serializers.ValidationError({
+                "message": "Invalid email or password."
+            })
+
+        if not db_user.is_active:
+            raise serializers.ValidationError({
+                "message": "Your account has been suspended. Please contact the administrator."
+            })
+
+        if (
+            db_user.role != User.UserRole.ADMIN
+            and not db_user.is_staff
+            and not db_user.is_superuser
+            and not db_user.email_verified
+        ):
+            raise serializers.ValidationError({
+                "message": "Please verify your email before logging in."
+            })
+
         user = AuthRepository.authenticate_user(
             email,
             password
         )
-        
+
         if not user:
-            raise serializers.ValidationError(
-                "Invalid email or password."
-            )
+            raise serializers.ValidationError({
+                "message": "Invalid email or password."
+            })
 
         refresh = RefreshToken.for_user(user)
 
-        profile_completed = False
+        profile_completed = user.profile_completed
         approval_status = None
 
         if user.role == "COMPANY":
-            company = Company.objects.filter(user=user).first()
+
+            company = Company.objects.filter(
+                user=user
+            ).first()
 
             if company:
-                profile_completed = True
                 approval_status = company.approval_status
 
         return {
@@ -139,9 +177,9 @@ class AuthService:
         user = AuthRepository.get_user_by_email_or_none(email)
 
         if user:
-            raise serializers.ValidationError(
-                "Account already exists. Please login."
-            )
+            raise serializers.ValidationError({
+                "message": "Account already exists. Please login."
+            })
 
         user = AuthRepository.create_google_user(
             email,
@@ -172,9 +210,21 @@ class AuthService:
 
         if not user:
             raise serializers.ValidationError({
-                    "message": "Account not found. Please sign up using Google first."})
+                "message": "Account not found. Please sign up using Google first."
+            })
 
         refresh = RefreshToken.for_user(user)
+
+        approval_status = None
+
+        if user.role == User.UserRole.COMPANY:
+
+            company = Company.objects.filter(
+                user=user
+            ).first()
+
+            if company:
+                approval_status = company.approval_status
 
         return {
             "access": str(refresh.access_token),
@@ -183,5 +233,34 @@ class AuthService:
                 "id": user.id,
                 "email": user.email,
                 "role": user.role,
+                "profile_completed": user.profile_completed,
+                "approval_status": approval_status,
             },
-    }
+        }
+        
+        
+        
+    @staticmethod
+    def verify_email(uid, token):
+
+        try:
+            user_id = force_str(
+                urlsafe_base64_decode(uid)
+            )
+
+            user = AuthRepository.get_user_by_id(user_id)
+
+        except (TypeError, ValueError, OverflowError):
+            raise serializers.ValidationError(
+                {"message": "Invalid verification link."}
+            )
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError(
+                {"message": "Invalid or expired verification link."}
+            )
+
+        user.email_verified = True
+        AuthRepository.save_user(user)
+
+        return user

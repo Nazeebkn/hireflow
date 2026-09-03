@@ -40,3 +40,5 @@ export const updateCompanyProfile = async (formData) => {
 
   return response.data;
 };
+
+

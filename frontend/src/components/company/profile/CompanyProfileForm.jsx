@@ -132,6 +132,8 @@ const handleChange = (event) => {
     verification_document: !formData.verification_document
       ? "Verification document is required."
       : "",
+
+  
   };
 
 
@@ -161,30 +163,53 @@ const handleChange = (event) => {
       });
 
       if (isUpdateMode) {
-        await updateCompanyProfile(payload);
+      await updateCompanyProfile(payload);
 
-        toast.success(
-          "Company profile updated successfully."
-        );
-      } else {
-        await createCompanyProfile(payload);
+      toast.success(
+        "Company profile resubmitted successfully."
+      );
 
-        toast.success(
-          "Company profile submitted successfully."
-        );
+      navigate("/company/pending-approval");
 
-        setIsUpdateMode(true);
-        navigate("/company/pending-approval");
-      }
+    } else {
+      await createCompanyProfile(payload);
+
+      toast.success(
+        "Company profile submitted successfully."
+      );
+
+      setIsUpdateMode(true);
+
+      navigate("/company/pending-approval");
+    }
 
       await fetchCompanyProfile();
 
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Something went wrong."
-      );
-    } finally {
+  const data = error.response?.data;
+
+  const message =
+    data?.message ||
+    data?.detail ||
+    data?.non_field_errors?.[0] ||
+    data?.company_name?.[0] ||
+    data?.industry?.[0] ||
+    data?.company_size?.[0] ||
+    data?.website?.[0] ||
+    data?.description?.[0] ||
+    data?.contact_person?.[0] ||
+    data?.contact_phone?.[0] ||
+    data?.country?.[0] ||
+    data?.state?.[0] ||
+    data?.city?.[0] ||
+    data?.address?.[0] ||
+    data?.company_logo?.[0] ||
+    data?.verification_document?.[0] ||
+    "Something went wrong.";
+
+  toast.error(message);
+}
+     finally {
       setLoading(false);
     }
   };

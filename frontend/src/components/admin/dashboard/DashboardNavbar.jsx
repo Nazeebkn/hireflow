@@ -12,7 +12,7 @@ function DashboardNavbar() {
 
       <div className="relative w-96">
 
-        <Search
+        {/* <Search
           size={18}
           className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
         />
@@ -21,7 +21,7 @@ function DashboardNavbar() {
           type="text"
           placeholder="Search companies, candidates..."
           className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm outline-none transition focus:border-primary"
-        />
+        /> */}
 
       </div>
 

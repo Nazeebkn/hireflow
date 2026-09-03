@@ -1,25 +1,27 @@
 from django.shortcuts import get_object_or_404
 
-from company_app.models import (
-    Company,
-    ApprovalStatus,
-)
+from company_app.models import Company
 
 
 class ApproveCompanyRepository:
 
     @staticmethod
-    def approve_company(company_id):
+    def get_company(company_id):
 
-        company = get_object_or_404(
+        return get_object_or_404(
             Company,
             id=company_id,
         )
 
-        company.approval_status = (
-            ApprovalStatus.APPROVED
-        )
+    @staticmethod
+    def approve_company(company):
 
-        company.save()
+        company.approval_status = "APPROVED"
+
+        company.save(
+            update_fields=[
+                "approval_status",
+            ]
+        )
 
         return company

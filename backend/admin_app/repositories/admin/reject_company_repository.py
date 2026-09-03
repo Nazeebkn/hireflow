@@ -1,31 +1,26 @@
 from django.shortcuts import get_object_or_404
 
-from company_app.models import (
-    Company,
-    ApprovalStatus,
-)
+from company_app.models import Company
 
 
 class RejectCompanyRepository:
 
     @staticmethod
-    def reject_company(
-        company_id,
-        rejection_reason,
-    ):
+    def get_company(company_id):
 
-        company = get_object_or_404(
+        return get_object_or_404(
             Company,
             id=company_id,
         )
 
-        company.approval_status = (
-            ApprovalStatus.REJECTED
-        )
+    @staticmethod
+    def reject_company(
+        company,
+        rejection_reason,
+    ):
 
-        company.rejection_reason = (
-            rejection_reason
-        )
+        company.approval_status = "REJECTED"
+        company.rejection_reason = rejection_reason
 
         company.save(
             update_fields=[

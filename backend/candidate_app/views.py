@@ -21,6 +21,10 @@ from .serializers.career_profile_completion_serializer import (
     CareerProfileCompletionSerializer,
 )
 
+from candidate_app.services.candidate_profile_completion_service import (
+    CandidateProfileCompletionService,
+)
+
 from .services.career_profile_completion_service import (
     CareerProfileCompletionService,
 )
@@ -427,7 +431,7 @@ class CandidateJobPreferenceAPIView(APIView):
         )
 
     def put(self, request):
-
+        print("JOB PREFERENCE DATA:", request.data)
         serializer = CandidateJobPreferenceSerializer(
             data=request.data
         )
@@ -472,4 +476,23 @@ class CareerProfileCompletionAPIView(APIView):
                 "message": "Career details saved successfully."
             },
             status=status.HTTP_201_CREATED
+        )
+        
+        
+        
+class CandidateProfileCompletionAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+
+        CandidateProfileCompletionService.complete_profile(
+            request.user
+        )
+
+        return Response(
+            {
+                "message": "Candidate profile completed successfully."
+            },
+            status=status.HTTP_200_OK,
         )

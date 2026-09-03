@@ -11,7 +11,11 @@ class AuthRepository:
     def get_user_by_email(email):
         return User.objects.get(email=email)
     
-    
+    @staticmethod
+    def get_user_by_id(user_id):
+        return User.objects.get(pk=user_id)
+
+
     @staticmethod
     def create_google_user(email, role):
         return User.objects.create_user(
@@ -33,3 +37,4 @@ class AuthRepository:
             username=email,
             password=password
         )
+        

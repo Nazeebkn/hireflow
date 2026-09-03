@@ -5,11 +5,17 @@ from company_app.models import Company
 
 class CompanyDetailsSerializer(serializers.ModelSerializer):
 
+    is_active = serializers.BooleanField(
+        source="user.is_active",
+        read_only=True,
+    )
+
     class Meta:
         model = Company
 
         fields = [
             "id",
+            "user",
             "company_name",
             "industry",
             "company_size",
@@ -26,4 +32,5 @@ class CompanyDetailsSerializer(serializers.ModelSerializer):
             "approval_status",
             "rejection_reason",
             "created_at",
+            "is_active",
         ]

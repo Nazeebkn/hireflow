@@ -10,7 +10,8 @@ from .views import (
     CandidateSkillAPIView,
     CandidateSkillDetailAPIView,
     CandidateJobPreferenceAPIView,
-    CareerProfileCompletionAPIView
+    CareerProfileCompletionAPIView,
+    CandidateProfileCompletionAPIView
 )
 urlpatterns = [
 
@@ -72,6 +73,13 @@ urlpatterns = [
         "profile-completion/career/",
         CareerProfileCompletionAPIView.as_view(),
         name="career-profile-completion",
+    ),
+    
+    
+    path(
+    "profile-completion/complete/",
+    CandidateProfileCompletionAPIView.as_view(),
+    name="candidate-profile-complete",
     ),
 
 ]

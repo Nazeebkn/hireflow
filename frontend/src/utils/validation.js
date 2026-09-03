@@ -549,7 +549,6 @@ export const validateSkill = (skill) => {
 export const validateSalary = (salary) => {
   const value = (salary || "").trim();
 
-  // Optional field
   if (!value) {
     return "";
   }
@@ -854,21 +853,35 @@ export const validateWebsite = (website) => {
   const value = (website || "").trim();
 
   if (!value) {
-    return "";
+    return "Website is required.";
   }
 
   if (website !== value) {
     return "Website cannot start or end with spaces.";
   }
 
+  if (value.length > 255) {
+    return "Website URL cannot exceed 255 characters.";
+  }
+
+  if (!/^https?:\/\//i.test(value)) {
+    return "Website must start with http:// or https://.";
+  }
+
   try {
-    new URL(value);
+    const url = new URL(value);
+
+    if (!url.hostname.includes(".")) {
+      return "Please enter a valid website URL.";
+    }
   } catch {
     return "Please enter a valid website URL.";
   }
 
   return "";
 };
+
+
 
 
 export const validateDescription = (description) => {
@@ -900,3 +913,4 @@ export const validateDescription = (description) => {
 
   return "";
 };
+

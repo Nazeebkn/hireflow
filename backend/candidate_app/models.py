@@ -30,8 +30,8 @@ class CandidateProfile(models.Model):
 
     location = models.CharField(max_length=255)
 
-    profile_picture = models.ImageField(
-        upload_to="candidate/profile_pictures/",
+    profile_picture = models.CharField(
+        max_length=500,
         blank=True,
         null=True
     )
@@ -268,9 +268,15 @@ class CandidateJobPreference(models.Model):
     default=list
     )
 
-    minimum_salary = models.PositiveIntegerField()
+    minimum_salary = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
 
-    maximum_salary = models.PositiveIntegerField()
+    maximum_salary = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
 
     employment_type = models.CharField(
         max_length=20,

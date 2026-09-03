@@ -72,7 +72,7 @@ function CareerDetailsStep({
               <AuthInput
                 name="institution_name"
                 label="School Name"
-                placeholder="GHSS Chundale"
+                placeholder="XYZ School"
                 value={formData.institution_name}
                 onChange={onChange}
                 error={errors.institution_name}

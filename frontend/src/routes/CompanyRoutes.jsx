@@ -2,7 +2,7 @@ import { Route } from "react-router-dom";
 
 import CompanyProfileCompletion from "../pages/company/CompanyProfileCompletion";
 import PendingApproval from "../pages/company/PendingApproval";
-
+import CompanyRejected from "../pages/company/CompanyRejected";
 
 function CompanyRoutes() {
   return (
@@ -15,6 +15,11 @@ function CompanyRoutes() {
       <Route
         path="/company/pending-approval"
         element={<PendingApproval />}
+      />
+
+      <Route
+        path="/company/rejected"
+        element={<CompanyRejected />}
       />
     </>
   );

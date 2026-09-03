@@ -1,9 +1,12 @@
 import heroImage from "../assets/hero-imagee.png";
+import { useNavigate } from "react-router-dom";
 
 function Hero() {
+  const navigate = useNavigate();
+
   return (
-    <section className="bg-background">
-      <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-7xl grid-cols-1 items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-24">
+    <section>
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-8 py-20 lg:grid-cols-2">
 
         {/* Left Content */}
         <div className="max-w-xl">
@@ -23,16 +26,23 @@ function Hero() {
           </p>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-            <button className="w-full rounded-lg bg-primary px-6 py-3 font-medium text-white transition-all duration-200 hover:bg-primary-hover sm:w-auto">
+
+            {/* Get Started */}
+            <button
+              onClick={() => navigate("/signup")}
+              className="w-full rounded-lg bg-primary px-6 py-3 font-medium text-white transition-all duration-200 hover:bg-primary-hover sm:w-auto"
+            >
               Get Started
             </button>
 
-          <a
-            href="#features"
-            className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-surface px-6 py-3 font-medium text-text transition-all duration-200 hover:bg-background sm:w-auto"
-          >
-            Learn More
-          </a>
+            {/* Learn More */}
+            <a
+              href="#features"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-surface px-6 py-3 font-medium text-text transition-all duration-200 hover:bg-background sm:w-auto"
+            >
+              Learn More
+            </a>
+
           </div>
         </div>
 

@@ -5,21 +5,111 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from users.models import User
 
 
+
 class SignupSerializer(serializers.ModelSerializer):
-    
-    password = serializers.CharField(write_only=True)
-    
+
+    email = serializers.EmailField(
+        required=True
+    )
+
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        trim_whitespace=False
+    )
+
+    role = serializers.ChoiceField(
+        choices=User.UserRole.choices,
+        required=True
+    )
+
     class Meta:
         model = User
         fields = [
-            'email',
-            'password',
-            'role'
+            "email",
+            "password",
+            "role",
         ]
+
+    def validate_email(self, value):
+
+        value = value.strip().lower()
+
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists."
+            )
+
+        return value
+
+    def validate_password(self, value):
+
+        if not value:
+            raise serializers.ValidationError(
+                "Password is required."
+            )
+
+        if len(value) < 8:
+            raise serializers.ValidationError(
+                "Password must be at least 8 characters long."
+            )
+
+        if len(value) > 128:
+            raise serializers.ValidationError(
+                "Password cannot exceed 128 characters."
+            )
+
+        if any(char.isspace() for char in value):
+            raise serializers.ValidationError(
+                "Password cannot contain spaces."
+            )
+
+        if not any(char.isupper() for char in value):
+            raise serializers.ValidationError(
+                "Password must contain at least one uppercase letter."
+            )
+
+        if not any(char.islower() for char in value):
+            raise serializers.ValidationError(
+                "Password must contain at least one lowercase letter."
+            )
+
+        if not any(char.isdigit() for char in value):
+            raise serializers.ValidationError(
+                "Password must contain at least one number."
+            )
+
+        if not any(
+            char in '!@#$%^&*(),.?":{}|<>'
+            for char in value
+        ):
+            raise serializers.ValidationError(
+                "Password must contain at least one special character."
+            )
+
+        try:
+            validate_password(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                list(exc.messages)
+            )
+
+        return value
+
+    def validate_role(self, value):
+
+        if value == User.UserRole.ADMIN:
+            raise serializers.ValidationError(
+                "Admin account cannot be created through signup."
+            )
+
+        return value
         
     
 

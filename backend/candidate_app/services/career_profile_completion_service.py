@@ -10,11 +10,8 @@ from candidate_app.services.candidate_skill_service import (
     CandidateSkillService,
 )
 
-from candidate_app.services.candidate_job_preference_service import (
-    CandidateJobPreferenceService,
-)
-
 from django.db import transaction
+
 
 class CareerProfileCompletionService:
 
@@ -43,23 +40,6 @@ class CareerProfileCompletionService:
             "years_of_experience": 0,
         }
 
-        job_preference_data = {
-            "preferred_job_role":
-                validated_data["preferred_job_role"],
-
-            "preferred_locations": [
-                validated_data["preferred_location"]
-            ],
-
-            "minimum_salary":
-                validated_data["expected_salary"],
-
-            "maximum_salary":
-                validated_data["expected_salary"],
-
-            "employment_type": "FULL_TIME",
-        }
-
         CandidateEducationService.create_education(
             user,
             education_data,
@@ -73,9 +53,4 @@ class CareerProfileCompletionService:
         CandidateSkillService.create_skill(
             user,
             skill_data,
-        )
-
-        CandidateJobPreferenceService.create_preference(
-            user,
-            job_preference_data,
         )

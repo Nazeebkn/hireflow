@@ -11,7 +11,6 @@ function CompanyInformationSection({
 }) {
   return (
     <div className="space-y-6">
-
       <div>
         <h2 className="text-lg font-semibold text-text-primary">
           Company Information
@@ -23,7 +22,6 @@ function CompanyInformationSection({
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
         <div>
           <AuthInput
             label="Company Name"
@@ -36,9 +34,7 @@ function CompanyInformationSection({
           />
 
           {errors.company_name && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.company_name}
-            </p>
+            <p className="mt-1 text-sm text-red-500">{errors.company_name}</p>
           )}
         </div>
 
@@ -53,9 +49,7 @@ function CompanyInformationSection({
           />
 
           {errors.industry && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.industry}
-            </p>
+            <p className="mt-1 text-sm text-red-500">{errors.industry}</p>
           )}
         </div>
 
@@ -70,9 +64,7 @@ function CompanyInformationSection({
           />
 
           {errors.company_size && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.company_size}
-            </p>
+            <p className="mt-1 text-sm text-red-500">{errors.company_size}</p>
           )}
         </div>
 
@@ -84,15 +76,13 @@ function CompanyInformationSection({
             placeholder="https://example.com"
             value={formData.website}
             onChange={onChange}
+            required
           />
 
           {errors.website && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.website}
-            </p>
+            <p className="mt-1 text-sm text-red-500">{errors.website}</p>
           )}
         </div>
-
       </div>
 
       <div>
@@ -107,12 +97,9 @@ function CompanyInformationSection({
         />
 
         {errors.description && (
-          <p className="mt-1 text-sm text-red-500">
-            {errors.description}
-          </p>
+          <p className="mt-1 text-sm text-red-500">{errors.description}</p>
         )}
       </div>
-
     </div>
   );
 }

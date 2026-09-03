@@ -161,9 +161,7 @@ function ResumePreferenceStep({
                 On-site
               </option>
 
-              <option value="HYBRID">
-                Hybrid
-              </option>
+              
 
               <option value="REMOTE">
                 Remote
