@@ -35,7 +35,7 @@ class AuthService:
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
         reset_link = (
-            f"http://localhost:5173/reset-password/{uid}/{token}"
+            f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}"
         )
 
         send_mail(

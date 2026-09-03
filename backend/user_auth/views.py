@@ -46,7 +46,7 @@ class SignupAPIView(APIView):
             )
 
             verification_link = (
-                f"http://localhost:5173/verify-email/{uid}/{token}/"
+                f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
             )
 
             send_mail(
