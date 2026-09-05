@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from company_app.models import Company
@@ -42,7 +44,7 @@ class CompanySerializer(serializers.ModelSerializer):
                 "Company Name cannot exceed 100 characters."
             )
 
-        if not value[0].isalpha():
+        if not re.match(r"^[A-Za-z]", value):
             raise serializers.ValidationError(
                 "Company Name must start with a letter."
             )
@@ -52,10 +54,7 @@ class CompanySerializer(serializers.ModelSerializer):
                 "Company Name cannot contain multiple consecutive spaces."
             )
 
-        if not all(
-            char.isalnum() or char in " .&'(),/-"
-            for char in value
-        ):
+        if not re.fullmatch(r"[A-Za-z0-9 .&'(),/-]+", value):
             raise serializers.ValidationError(
                 "Company Name contains invalid characters."
             )
@@ -120,7 +119,7 @@ class CompanySerializer(serializers.ModelSerializer):
                 "Contact Person cannot exceed 50 characters."
             )
 
-        if not value[0].isalpha():
+        if not re.match(r"^[A-Za-z]", value):
             raise serializers.ValidationError(
                 "Contact Person must start with a letter."
             )
@@ -130,10 +129,7 @@ class CompanySerializer(serializers.ModelSerializer):
                 "Contact Person cannot contain multiple consecutive spaces."
             )
 
-        if not all(
-            char.isalpha() or char in " .'"
-            for char in value
-        ):
+        if not re.fullmatch(r"[A-Za-z .']+", value):
             raise serializers.ValidationError(
                 "Contact Person can contain only letters and spaces."
             )
@@ -148,7 +144,7 @@ class CompanySerializer(serializers.ModelSerializer):
                 "Contact Phone is required."
             )
 
-        if not value.isdigit():
+        if not re.fullmatch(r"\d+", value):
             raise serializers.ValidationError(
                 "Contact Phone must contain only digits."
             )
@@ -158,7 +154,7 @@ class CompanySerializer(serializers.ModelSerializer):
                 "Contact Phone must be exactly 10 digits."
             )
 
-        if value[0] not in "6789":
+        if not re.match(r"^[6789]", value):
             raise serializers.ValidationError(
                 "Please enter a valid Indian phone number."
             )
@@ -175,7 +171,6 @@ class CompanySerializer(serializers.ModelSerializer):
 
         return value
 
-    
     def validate_website(self, value):
         value = value.strip()
 
@@ -195,7 +190,6 @@ class CompanySerializer(serializers.ModelSerializer):
             )
 
         return value
-
 
     def validate_state(self, value):
         value = value.strip()
@@ -275,11 +269,8 @@ class CompanySerializer(serializers.ModelSerializer):
             )
 
         return value
-    
-    
-    
-    
-    
+
+
 class CompanyDetailSerializer(serializers.ModelSerializer):
     """
     Used for Read operations.

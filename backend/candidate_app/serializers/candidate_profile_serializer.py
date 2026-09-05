@@ -5,6 +5,7 @@ from PIL import Image
 
 from candidate_app.models import CandidateProfile
 
+import re
 
 class CandidateProfileSerializer(serializers.ModelSerializer):
 
@@ -30,7 +31,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
                 "First name is required."
             )
 
-        if not value.replace(" ", "").isalpha():
+        if not re.fullmatch(r"[A-Za-z ]+", value):
             raise serializers.ValidationError(
                 "First name must contain only letters."
             )
@@ -57,7 +58,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
 
         value = value.strip()
 
-        if not value.isdigit():
+        if not re.fullmatch(r"\d+", value):
             raise serializers.ValidationError(
                 "Phone number must contain only digits."
             )
@@ -143,7 +144,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
                 "Professional headline must be at least 5 characters long."
             )
 
-        if not any(char.isalpha() for char in value):
+        if not re.search(r"[A-Za-z]", value):
             raise serializers.ValidationError(
                 "Professional headline must contain at least one letter."
             )
@@ -160,7 +161,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
                 "About me must be at least 15 characters long."
             )
 
-        if not any(char.isalpha() for char in value):
+        if not re.search(r"[A-Za-z]", value):
             raise serializers.ValidationError(
                 "About me must contain at least one letter."
             )

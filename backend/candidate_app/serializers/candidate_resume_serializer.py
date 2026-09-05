@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from candidate_app.models import CandidateProfile
 
+import re
 
 class CandidateResumeSerializer(serializers.ModelSerializer):
 
@@ -26,10 +27,7 @@ class CandidateResumeSerializer(serializers.ModelSerializer):
 
         file_name = value.name.lower()
 
-        if not any(
-            file_name.endswith(extension)
-            for extension in allowed_extensions
-        ):
+        if not re.search(r"\.(pdf|doc|docx)$", file_name):
             raise serializers.ValidationError(
                 "Only PDF, DOC, and DOCX resume files are allowed."
             )

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+import re
 
 class CareerProfileCompletionSerializer(serializers.Serializer):
 
@@ -197,7 +198,7 @@ class CareerProfileCompletionSerializer(serializers.Serializer):
                 "Primary Skill cannot exceed 100 characters."
             )
 
-        if not any(char.isalpha() for char in value):
+        if not re.search(r"[A-Za-z]", value):
             raise serializers.ValidationError(
                 "Primary Skill must contain letters."
             )

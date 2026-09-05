@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 from users.models import User
 
-
+import re
 
 class SignupSerializer(serializers.ModelSerializer):
 
@@ -65,30 +65,27 @@ class SignupSerializer(serializers.ModelSerializer):
                 "Password cannot exceed 128 characters."
             )
 
-        if any(char.isspace() for char in value):
+        if re.search(r"\s", value):
             raise serializers.ValidationError(
                 "Password cannot contain spaces."
             )
 
-        if not any(char.isupper() for char in value):
+        if not re.search(r"[A-Z]", value):
             raise serializers.ValidationError(
                 "Password must contain at least one uppercase letter."
             )
 
-        if not any(char.islower() for char in value):
+        if not re.search(r"[a-z]", value):
             raise serializers.ValidationError(
                 "Password must contain at least one lowercase letter."
             )
 
-        if not any(char.isdigit() for char in value):
+        if not re.search(r"\d", value):
             raise serializers.ValidationError(
                 "Password must contain at least one number."
             )
 
-        if not any(
-            char in '!@#$%^&*(),.?":{}|<>'
-            for char in value
-        ):
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
             raise serializers.ValidationError(
                 "Password must contain at least one special character."
             )
