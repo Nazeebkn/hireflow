@@ -1,28 +1,39 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   ArrowLeft,
   Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  FileText,
-  ShieldCheck,
-  ShieldAlert,
-  Ban,
-  X,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
   ExternalLink,
-  Users,
-  MapPinned,
   Factory,
+  FileText,
+  Globe,
+  Mail,
+  MapPin,
+  MapPinned,
+  MoreVertical,
+  Phone,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
   Sparkles,
+  Users,
   UserRound,
+  Ban,
+  BriefcaseBusiness,
+  X,
 } from "lucide-react";
 
 import DashboardSidebar from "../../components/admin/dashboard/DashboardSidebar";
 import DashboardNavbar from "../../components/admin/dashboard/DashboardNavbar";
+
+import CompanyJobKpiCards from "../../components/admin/company-details/CompanyJobKpiCards";
+import CompanyRecentJobs from "../../components/admin/company-details/CompanyRecentJobs";
 
 import {
   getCompanyDetails,
@@ -30,22 +41,64 @@ import {
   activateCompany,
 } from "../../services/admin/adminService";
 
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function formatDate(dateValue) {
+  if (!dateValue) {
+    return "Not specified";
+  }
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not specified";
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
+
 function CompanyDetails() {
   const navigate = useNavigate();
   const { companyId } = useParams();
 
   const [company, setCompany] = useState(null);
+
   const [loading, setLoading] = useState(true);
 
-  const [showSuspendModal, setShowSuspendModal] = useState(false);
-  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const [jobSearch, setJobSearch] = useState("");
+
+  const [jobStatus, setJobStatus] = useState("ALL");
+
+  const [showMenu, setShowMenu] = useState(false);
+
+  const [showSuspendModal, setShowSuspendModal] =
+    useState(false);
+
+  const [showActivateModal, setShowActivateModal] =
+    useState(false);
 
   const [suspending, setSuspending] = useState(false);
+
   const [activating, setActivating] = useState(false);
 
-  // =====================================================
-  // FETCH COMPANY
-  // =====================================================
+
+  /* =====================================================
+     FETCH COMPANY
+  ===================================================== */
 
   const fetchCompanyDetails = async () => {
     try {
@@ -53,12 +106,8 @@ function CompanyDetails() {
 
       const data = await getCompanyDetails(companyId);
 
-      console.log("Company Details:", data);
-      console.log("Company Active Status:", data?.is_active);
-      console.log(
-        "Verification Document:",
-        data?.verification_document
-      );
+     console.log("COMPANY DETAILS:", data);
+console.log("COMPANY JOBS:", data?.jobs);
 
       setCompany(data);
     } catch (error) {
@@ -71,17 +120,103 @@ function CompanyDetails() {
     }
   };
 
+
   useEffect(() => {
     fetchCompanyDetails();
   }, [companyId]);
 
-  // =====================================================
-  // SUSPEND COMPANY
-  // =====================================================
+
+  /* =====================================================
+     JOBS FROM API
+  ===================================================== */
+
+  const jobs = useMemo(() => {
+    if (!company) {
+      return [];
+    }
+
+    if (Array.isArray(company.jobs)) {
+      return company.jobs;
+    }
+
+    if (Array.isArray(company.job_list)) {
+      return company.job_list;
+    }
+
+    if (Array.isArray(company.job_details)) {
+      return company.job_details;
+    }
+
+    return [];
+  }, [company]);
+
+
+  /* =====================================================
+     FILTERED JOBS
+     
+     Used by search/filter.
+     Recent Jobs component itself limits display to 5.
+  ===================================================== */
+
+  const filteredJobs = useMemo(() => {
+    const searchValue =
+      jobSearch.trim().toLowerCase();
+
+    return jobs.filter((job) => {
+      const title = String(
+        job.title ||
+          job.job_title ||
+          ""
+      ).toLowerCase();
+
+      const department = String(
+        job.department || ""
+      ).toLowerCase();
+
+      const location = String(
+        job.location || ""
+      ).toLowerCase();
+
+      const status = String(
+        job.status || ""
+      ).toUpperCase();
+
+      const matchesSearch =
+        !searchValue ||
+        title.includes(searchValue) ||
+        department.includes(searchValue) ||
+        location.includes(searchValue);
+
+      const matchesStatus =
+        jobStatus === "ALL" ||
+        status === jobStatus;
+
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
+    });
+  }, [
+    jobs,
+    jobSearch,
+    jobStatus,
+  ]);
+
+
+  /* =====================================================
+     COMPANY STATUS
+  ===================================================== */
+
+  const isActive =
+    company?.is_active === true;
+
+
+  /* =====================================================
+     SUSPEND COMPANY
+  ===================================================== */
 
   const handleSuspend = async () => {
     if (!company?.user) {
-      console.error("Company user ID not found.");
       alert("Company user ID not found.");
       return;
     }
@@ -89,41 +224,33 @@ function CompanyDetails() {
     try {
       setSuspending(true);
 
-      console.log(
-        "Suspending User ID:",
-        company.user
-      );
-
       await suspendCompany(company.user);
-
-      console.log(
-        "Company suspended successfully."
-      );
 
       setShowSuspendModal(false);
 
-      // Refresh current company details
       await fetchCompanyDetails();
-
     } catch (error) {
       console.error(
         "Failed to suspend company:",
         error
       );
 
-      alert("Failed to suspend company.");
+      alert(
+        error?.response?.data?.message ||
+          "Failed to suspend company."
+      );
     } finally {
       setSuspending(false);
     }
   };
 
-  // =====================================================
-  // ACTIVATE COMPANY
-  // =====================================================
+
+  /* =====================================================
+     ACTIVATE COMPANY
+  ===================================================== */
 
   const handleActivate = async () => {
     if (!company?.user) {
-      console.error("Company user ID not found.");
       alert("Company user ID not found.");
       return;
     }
@@ -131,211 +258,228 @@ function CompanyDetails() {
     try {
       setActivating(true);
 
-      console.log(
-        "Activating User ID:",
-        company.user
-      );
-
       await activateCompany(company.user);
-
-      console.log(
-        "Company activated successfully."
-      );
 
       setShowActivateModal(false);
 
-      // Refresh current company details
       await fetchCompanyDetails();
-
     } catch (error) {
       console.error(
         "Failed to activate company:",
         error
       );
 
-      alert("Failed to activate company.");
+      alert(
+        error?.response?.data?.message ||
+          "Failed to activate company."
+      );
     } finally {
       setActivating(false);
     }
   };
 
-  // =====================================================
-  // LOADING
-  // =====================================================
+
+  /* =====================================================
+     LOADING
+  ===================================================== */
 
   if (loading) {
     return (
-      <div className="h-screen overflow-hidden bg-background">
+      <AdminPageShell>
+        <div className="flex min-h-[70vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
 
-        <DashboardSidebar />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
 
-        <main className="ml-0 h-screen md:ml-72">
-
-          <div className="fixed left-0 right-0 top-0 z-50 md:left-72">
-            <DashboardNavbar />
-          </div>
-
-          <div className="flex h-screen items-center justify-center pt-20">
-
-            <div className="flex flex-col items-center gap-4">
-
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-
-              <p className="text-sm text-text-secondary">
-                Loading company details...
-              </p>
-
-            </div>
+            <p className="text-sm text-text-secondary">
+              Loading company details...
+            </p>
 
           </div>
-
-        </main>
-
-      </div>
+        </div>
+      </AdminPageShell>
     );
   }
 
-  // =====================================================
-  // NOT FOUND
-  // =====================================================
+
+  /* =====================================================
+     COMPANY NOT FOUND
+  ===================================================== */
 
   if (!company) {
     return (
-      <div className="h-screen overflow-hidden bg-background">
+      <AdminPageShell>
+        <div className="flex min-h-[70vh] items-center justify-center px-6">
 
-        <DashboardSidebar />
+          <div className="w-full max-w-md rounded-2xl border border-border bg-white p-8 text-center shadow-sm">
 
-        <main className="ml-0 h-screen md:ml-72">
-
-          <div className="fixed left-0 right-0 top-0 z-50 md:left-72">
-            <DashboardNavbar />
-          </div>
-
-          <div className="flex h-screen items-center justify-center px-6 pt-20">
-
-            <div className="text-center">
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
-                <Building2
-                  size={30}
-                  className="text-primary"
-                />
-              </div>
-
-              <h2 className="mt-5 text-xl font-semibold text-text-primary">
-                Company not found
-              </h2>
-
-              <p className="mt-2 text-sm text-text-secondary">
-                The requested company could not be found.
-              </p>
-
-              <button
-                onClick={() =>
-                  navigate("/admin/companies")
-                }
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
-              >
-                <ArrowLeft size={16} />
-                Back to Companies
-              </button>
-
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-primary">
+              <Building2 size={30} />
             </div>
 
+            <h2 className="mt-5 text-xl font-bold text-text">
+              Company not found
+            </h2>
+
+            <p className="mt-2 text-sm text-text-secondary">
+              The requested company could not be found.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/admin/companies")
+              }
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
+            >
+              <ArrowLeft size={17} />
+              Back to Companies
+            </button>
+
           </div>
 
-        </main>
-
-      </div>
+        </div>
+      </AdminPageShell>
     );
   }
 
-  // =====================================================
-  // ACCOUNT STATUS
-  // =====================================================
 
-  const isActive = company.is_active === true;
+  /* =====================================================
+     MAIN PAGE
+  ===================================================== */
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-50">
+    <AdminPageShell>
 
-      {/* ================================================= */}
-      {/* SIDEBAR */}
-      {/* ================================================= */}
+      <div className="min-h-screen bg-[#f8f9ff]">
 
-      <DashboardSidebar />
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
 
-      {/* ================================================= */}
-      {/* MAIN */}
-      {/* ================================================= */}
 
-      <main className="ml-0 h-screen md:ml-72">
+          {/* =================================================
+              BREADCRUMB
+          ================================================= */}
 
-        {/* ================================================= */}
-        {/* NAVBAR */}
-        {/* ================================================= */}
+          <div className="mb-5 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm text-text-secondary">
 
-        <div className="fixed left-0 right-0 top-0 z-50 md:left-72">
-          <DashboardNavbar />
-        </div>
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/admin")
+              }
+              className="transition hover:text-primary"
+            >
+              Dashboard
+            </button>
 
-        {/* ================================================= */}
-        {/* CONTENT */}
-        {/* ================================================= */}
+            <ChevronRight size={15} />
 
-        <div className="h-screen overflow-y-auto pt-20">
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/admin/companies")
+              }
+              className="transition hover:text-primary"
+            >
+              Companies
+            </button>
 
-          <div className="mx-auto w-full max-w-[1450px] px-4 py-7 sm:px-6 lg:px-8">
+            <ChevronRight size={15} />
 
-            {/* ================================================= */}
-            {/* HEADER */}
-            {/* ================================================= */}
+            <span className="font-semibold text-primary">
+              {company.company_name || "Company"}
+            </span>
 
-            <div className="mb-6">
+          </div>
 
-              <button
-                onClick={() => navigate(-1)}
-                className="mb-5 inline-flex items-center gap-2 rounded-lg px-1 py-1 text-sm font-medium text-text-secondary transition hover:text-primary"
-              >
-                <ArrowLeft size={17} />
-                Back to Companies
-              </button>
 
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          {/* =================================================
+              PAGE HEADER
+          ================================================= */}
 
-                <div>
+          <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    <Sparkles size={13} />
-                    Company Management
-                  </div>
+            <div className="min-w-0">
 
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    Company Details
-                  </h1>
+              <div className="flex items-center gap-2">
 
-                  <p className="mt-1.5 text-sm text-text-secondary sm:text-base">
-                    Review company profile, business information and account status.
-                  </p>
+                <h1 className="truncate text-2xl font-bold tracking-tight text-text sm:text-3xl">
+                  {company.company_name || "Company"}
+                </h1>
 
-                </div>
+                <CheckCircle2
+                  size={21}
+                  className="shrink-0 text-secondary"
+                  fill="currentColor"
+                />
 
-                {/* ACCOUNT STATUS */}
+              </div>
 
-                {isActive ? (
-                  <div className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary sm:text-base">
+                Manage company information, jobs,
+                candidates, account status and
+                verification details.
+              </p>
 
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />
+            </div>
 
-                    Active Account
 
-                  </div>
-                ) : (
-                  <div className="inline-flex w-fit items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+            <div className="flex items-center gap-2">
 
-                    <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]" />
+              {isActive ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowSuspendModal(true)
+                  }
+                  className="rounded-lg bg-red-100 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-200"
+                >
+                  Suspend Company
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowActivateModal(true)
+                  }
+                  className="rounded-lg bg-emerald-100 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-200"
+                >
+                  Activate Company
+                </button>
+              )}
 
-                    Suspended Account
+
+              <div className="relative">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowMenu(
+                      (previous) => !previous
+                    )
+                  }
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white text-text-secondary transition hover:bg-slate-100 hover:text-text"
+                >
+                  <MoreVertical size={18} />
+                </button>
+
+
+                {showMenu && (
+                  <div className="absolute right-0 top-12 z-30 w-48 rounded-xl border border-border bg-white p-1 shadow-xl">
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMenu(false);
+                        navigate(
+                          "/admin/companies"
+                        );
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-text transition hover:bg-slate-50"
+                    >
+                      <ArrowLeft size={16} />
+                      Back to Companies
+                    </button>
 
                   </div>
                 )}
@@ -344,948 +488,564 @@ function CompanyDetails() {
 
             </div>
 
-            {/* ================================================= */}
-            {/* KPI CARDS */}
-            {/* ================================================= */}
+          </div>
 
-            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
-              <KpiCard
-                title="Company"
-                value={company.company_name || "Company"}
-                description="Registered business"
-                icon={Building2}
-                wrapper="border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50"
-                iconWrapper="bg-blue-100 ring-blue-200"
-                iconColor="text-blue-600"
-                titleColor="text-blue-700"
-                valueColor="text-blue-950"
-                descriptionColor="text-blue-600"
-              />
+          {/* =================================================
+              COMPANY HERO
+          ================================================= */}
 
-              <KpiCard
-                title="Industry"
-                value={company.industry || "Not provided"}
-                description="Business sector"
-                icon={Factory}
-                wrapper="border-violet-200 bg-gradient-to-br from-violet-50 via-white to-purple-50"
-                iconWrapper="bg-violet-100 ring-violet-200"
-                iconColor="text-violet-600"
-                titleColor="text-violet-700"
-                valueColor="text-violet-950"
-                descriptionColor="text-violet-600"
-              />
+          <section className="mb-6 rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-7">
 
-              <KpiCard
-                title="Company Size"
-                value={company.company_size || "Not provided"}
-                description="Organization size"
-                icon={Users}
-                wrapper="border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-sky-50"
-                iconWrapper="bg-cyan-100 ring-cyan-200"
-                iconColor="text-cyan-600"
-                titleColor="text-cyan-700"
-                valueColor="text-cyan-950"
-                descriptionColor="text-cyan-600"
-              />
+            <div className="flex flex-col gap-6 md:flex-row md:items-center">
 
-              <KpiCard
-                title="Account"
-                value={isActive ? "Active" : "Suspended"}
-                description="Company login access"
-                icon={
-                  isActive
-                    ? ShieldCheck
-                    : ShieldAlert
-                }
-                wrapper={
-                  isActive
-                    ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-green-50"
-                    : "border-red-200 bg-gradient-to-br from-red-200 via-white to-rose-50"
-                }
-                iconWrapper={
-                  isActive
-                    ? "bg-emerald-100 ring-emerald-200"
-                    : "bg-red-100 ring-red-200"
-                }
-                iconColor={
-                  isActive
-                    ? "text-emerald-600"
-                    : "text-red-600"
-                }
-                titleColor={
-                  isActive
-                    ? "text-emerald-700"
-                    : "text-red-700"
-                }
-                valueColor={
-                  isActive
-                    ? "text-emerald-950"
-                    : "text-red-950"
-                }
-                descriptionColor={
-                  isActive
-                    ? "text-emerald-600"
-                    : "text-red-600"
-                }
-              />
 
-            </div>
+              {/* COMPANY LOGO */}
 
-            {/* ================================================= */}
-            {/* COMPANY PROFILE BANNER */}
-            {/* ================================================= */}
+              <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-slate-50">
 
-            <section className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 shadow-xl">
+                {company.company_logo ? (
+                  <img
+                    src={company.company_logo}
+                    alt={
+                      company.company_name ||
+                      "Company logo"
+                    }
+                    className="h-full w-full object-contain p-3"
+                  />
+                ) : (
+                  <Building2
+                    size={38}
+                    className="text-primary"
+                  />
+                )}
 
-              <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+              </div>
 
-              <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-blue-300/20 blur-3xl" />
 
-              <div className="relative px-6 py-7 sm:px-8 lg:py-8">
+              {/* COMPANY DETAILS */}
 
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0 flex-1">
 
-                  <div className="flex min-w-0 items-center gap-5">
+                <div className="mb-4 flex flex-wrap gap-2">
 
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl ring-4 ring-white/20">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white">
 
-                      {company.company_logo ? (
-                        <img
-                          src={company.company_logo}
-                          alt={company.company_name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Building2
-                          size={34}
-                          className="text-primary"
-                        />
-                      )}
+                    <Sparkles size={13} />
 
-                    </div>
+                    Company Profile
 
-                    <div className="min-w-0">
+                  </span>
 
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100">
-                        Company Profile
-                      </p>
 
-                      <h2 className="mt-1 truncate text-2xl font-bold text-white sm:text-3xl">
-                        {company.company_name}
-                      </h2>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                      isActive
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
 
-                      {company.industry && (
-                        <p className="mt-1.5 text-sm font-medium text-blue-100">
-                          {company.industry}
-                        </p>
-                      )}
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        isActive
+                          ? "bg-emerald-500"
+                          : "bg-red-500"
+                      }`}
+                    />
 
-                      {company.website && (
-                        <div className="mt-2 flex items-center gap-2 text-sm text-blue-100">
+                    {isActive
+                      ? "Active"
+                      : "Suspended"}
 
-                          <Globe size={14} />
-
-                          <span className="truncate">
-                            {company.website}
-                          </span>
-
-                        </div>
-                      )}
-
-                    </div>
-
-                  </div>
-
-                  {company.website && (
-                    <a
-                      href={company.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-primary shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-50"
-                    >
-                      <Globe size={17} />
-                      Visit Website
-                      <ExternalLink size={14} />
-                    </a>
-                  )}
+                  </span>
 
                 </div>
 
-              </div>
 
-            </section>
+                <h2 className="text-2xl font-bold text-text sm:text-3xl">
+                  {company.company_name || "Company"}
+                </h2>
 
-            {/* ================================================= */}
-            {/* MAIN GRID */}
-            {/* ================================================= */}
 
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
-              {/* ================================================= */}
-              {/* LEFT */}
-              {/* ================================================= */}
-
-              <div className="space-y-6 xl:col-span-8">
-
-                {/* COMPANY INFORMATION */}
-
-                <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
-
-                  <SectionHeader
-                    icon={Building2}
-                    title="Company Information"
-                    description="Basic business and organization details"
+                  <HeroInfo
+                    icon={Factory}
+                    value={
+                      company.industry ||
+                      "Industry not provided"
+                    }
                   />
 
-                  <div className="grid grid-cols-1 gap-px bg-blue-100/60 sm:grid-cols-2">
-
-                    <InfoTile
-                      label="Company Name"
-                      value={company.company_name}
-                      icon={Building2}
-                    />
-
-                    <InfoTile
-                      label="Industry"
-                      value={company.industry}
-                      icon={Factory}
-                    />
-
-                    <InfoTile
-                      label="Company Size"
-                      value={company.company_size}
-                      icon={Users}
-                    />
-
-                    <InfoTile
-                      label="Website"
-                      value={company.website}
-                      icon={Globe}
-                      link
-                    />
-
-                  </div>
-
-                </section>
-
-                {/* CONTACT INFORMATION */}
-
-                <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
-
-                  <SectionHeader
-                    icon={UserRound}
-                    title="Contact Information"
-                    description="Primary company contact details"
+                  <HeroInfo
+                    icon={Users}
+                    value={
+                      company.company_size ||
+                      "Company size not provided"
+                    }
                   />
 
-                  <div className="grid grid-cols-1 gap-px bg-blue-100/60 sm:grid-cols-2">
-
-                    <InfoTile
-                      label="Contact Person"
-                      value={company.contact_person}
-                      icon={UserRound}
-                    />
-
-                    <InfoTile
-                      label="Phone Number"
-                      value={company.contact_phone}
-                      icon={Phone}
-                    />
-
-                  </div>
-
-                </section>
-
-                {/* LOCATION */}
-
-                <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
-
-                  <SectionHeader
-                    icon={MapPinned}
-                    title="Company Location"
-                    description="Registered business address"
-                  />
-
-                  <div className="grid grid-cols-1 gap-px bg-blue-100/60 sm:grid-cols-2">
-
-                    <InfoTile
-                      label="Country"
-                      value={company.country}
-                      icon={Globe}
-                    />
-
-                    <InfoTile
-                      label="State"
-                      value={company.state}
-                      icon={MapPin}
-                    />
-
-                    <InfoTile
-                      label="City"
-                      value={company.city}
-                      icon={MapPinned}
-                    />
-
-                    <InfoTile
-                      label="Address"
-                      value={company.address}
-                      icon={MapPin}
-                    />
-
-                  </div>
-
-                </section>
-
-                {/* DESCRIPTION */}
-
-                <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
-
-                  <SectionHeader
-                    icon={Sparkles}
-                    title="Company Description"
-                    description="Business overview and company introduction"
-                  />
-
-                  <div className="border-t border-blue-100 bg-blue-50/30 p-6 sm:p-7">
-
-                    {company.description ? (
-                      <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-
-                        <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">
-                          {company.description}
-                        </p>
-
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/50 p-6 text-center">
-
-                        <Sparkles
-                          size={25}
-                          className="mx-auto text-primary/50"
-                        />
-
-                        <p className="mt-3 text-sm font-medium text-blue-700">
-                          No company description provided
-                        </p>
-
-                      </div>
-                    )}
-
-                  </div>
-
-                </section>
-
-              </div>
-
-              {/* ================================================= */}
-              {/* RIGHT */}
-              {/* ================================================= */}
-
-              <aside className="space-y-6 xl:col-span-4">
-
-                {/* ACCOUNT OVERVIEW */}
-
-                <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-
-                  <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-blue-50 px-6 py-5">
-
-                    <h2 className="font-bold text-text-primary">
-                      Account Overview
-                    </h2>
-
-                    <p className="mt-1 text-xs text-text-secondary">
-                      Company status and administrative actions.
-                    </p>
-
-                  </div>
-
-                  <div className="p-6">
-
-                    {/* STATUS */}
-
-                    <div
-                      className={`rounded-2xl border p-5 ${
-                        isActive
-                          ? "border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50"
-                          : "border-red-200 bg-gradient-to-br from-red-50 to-rose-50"
-                      }`}
-                    >
-
-                      <div className="flex items-center justify-between">
-
-                        <div className="flex items-center gap-3">
-
-                          <div
-                            className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                              isActive
-                                ? "bg-emerald-100"
-                                : "bg-red-100"
-                            }`}
-                          >
-
-                            {isActive ? (
-                              <ShieldCheck
-                                size={21}
-                                className="text-emerald-600"
-                              />
-                            ) : (
-                              <ShieldAlert
-                                size={21}
-                                className="text-red-600"
-                              />
-                            )}
-
-                          </div>
-
-                          <div>
-
-                            <p
-                              className={`text-sm font-bold ${
-                                isActive
-                                  ? "text-emerald-800"
-                                  : "text-red-800"
-                              }`}
-                            >
-                              {isActive
-                                ? "Active Account"
-                                : "Suspended Account"}
-                            </p>
-
-                            <p
-                              className={`mt-0.5 text-xs ${
-                                isActive
-                                  ? "text-emerald-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {isActive
-                                ? "Login access enabled"
-                                : "Login access disabled"}
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        <span
-                          className={`h-3 w-3 rounded-full ${
-                            isActive
-                              ? "bg-emerald-500 shadow-[0_0_0_5px_rgba(16,185,129,0.12)]"
-                              : "bg-red-500 shadow-[0_0_0_5px_rgba(239,68,68,0.12)]"
-                          }`}
-                        />
-
-                      </div>
-
-                    </div>
-
-                    {/* VERIFICATION DOCUMENT */}
-
-                    <div className="mt-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-5">
-
-                      <div className="flex items-center gap-3">
-
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
-
-                          <FileText
-                            size={19}
-                            className="text-primary"
-                          />
-
-                        </div>
-
-                        <div>
-
-                          <h3 className="text-sm font-bold text-blue-900">
-                            Verification Document
-                          </h3>
-
-                          <p className="text-xs text-blue-600">
-                            Company verification file
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                      {company.verification_document ? (
-                        <a
-                          href={company.verification_document}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
-                        >
-                          <FileText size={16} />
-                          View Document
-                          <ExternalLink size={14} />
-                        </a>
-                      ) : (
-                        <div className="mt-4 rounded-xl bg-white/70 px-4 py-3 text-center text-xs font-medium text-blue-600">
-                          No verification document uploaded.
-                        </div>
-                      )}
-
-                    </div>
-
-                    {/* ================================================= */}
-                    {/* SUSPEND COMPANY */}
-                    {/* ================================================= */}
-
-                    {isActive && (
-                      <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/70 p-5">
-
-                        <div className="flex items-center gap-3">
-
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100">
-
-                            <Ban
-                              size={18}
-                              className="text-red-600"
-                            />
-
-                          </div>
-
-                          <div>
-
-                            <h3 className="text-sm font-bold text-red-900">
-                              Account Action
-                            </h3>
-
-                            <p className="text-xs text-red-600">
-                              Manage company access
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        <button
-                          onClick={() =>
-                            setShowSuspendModal(true)
-                          }
-                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 active:scale-[0.98]"
-                        >
-                          <Ban size={16} />
-                          Suspend Company
-                        </button>
-
-                      </div>
-                    )}
-
-                    {/* ================================================= */}
-                    {/* ACTIVATE COMPANY */}
-                    {/* ================================================= */}
-
-                    {!isActive && (
-                      <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5">
-
-                        <div className="flex items-center gap-3">
-
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
-
-                            <ShieldCheck
-                              size={18}
-                              className="text-emerald-600"
-                            />
-
-                          </div>
-
-                          <div>
-
-                            <h3 className="text-sm font-bold text-emerald-900">
-                              Account Action
-                            </h3>
-
-                            <p className="text-xs text-emerald-600">
-                              Restore company access
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        <button
-                          onClick={() =>
-                            setShowActivateModal(true)
-                          }
-                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
-                        >
-                          <ShieldCheck size={16} />
-                          Activate Company
-                        </button>
-
-                      </div>
-                    )}
-
-                  </div>
-
-                </section>
-
-                {/* CONTACT SUMMARY */}
-
-                <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
-
-                  <div className="border-b border-blue-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-6 py-5">
-
-                    <div className="flex items-center gap-3">
-
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-blue-200">
-
-                        <Mail size={18} />
-
-                      </div>
-
-                      <div>
-
-                        <h2 className="font-bold text-text-primary">
-                          Contact Summary
-                        </h2>
-
-                        <p className="mt-1 text-xs text-text-secondary">
-                          Company contact information.
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  <div className="p-5">
-
-                    <ContactTile
-                      label="Contact Person"
-                      value={company.contact_person}
-                      icon={UserRound}
-                    />
-
-                    <ContactTile
-                      label="Phone"
-                      value={company.contact_phone}
-                      icon={Phone}
-                    />
-
-                    <ContactTile
-                      label="Website"
-                      value={company.website}
-                      icon={Globe}
-                    />
-
-                    <ContactTile
-                      label="Location"
-                      value={[
+                  <HeroInfo
+                    icon={MapPin}
+                    value={
+                      [
                         company.city,
                         company.state,
                         company.country,
                       ]
                         .filter(Boolean)
-                        .join(", ")}
-                      icon={MapPin}
-                      last
-                    />
+                        .join(", ") ||
+                      "Location not provided"
+                    }
+                  />
 
-                  </div>
+                  <HeroInfo
+                    icon={Globe}
+                    value={
+                      company.website ||
+                      "Website not provided"
+                    }
+                  />
 
-                </section>
+                  <HeroInfo
+                    icon={Mail}
+                    value={
+                      company.email ||
+                      company.contact_email ||
+                      "Email not provided"
+                    }
+                  />
 
-              </aside>
+                  <HeroInfo
+                    icon={Phone}
+                    value={
+                      company.contact_phone ||
+                      company.phone ||
+                      "Phone not provided"
+                    }
+                  />
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+                COMPANY INFORMATION CARDS
+                NO COUNT STATISTICS HERE
+            ================================================= */}
+
+            <div className="mt-7 grid grid-cols-1 gap-3 border-t border-border pt-6 sm:grid-cols-2 lg:grid-cols-3">
+
+              <CompanyInfoCard
+                label="Company Type"
+                value={
+                  company.company_type ||
+                  company.organization_type ||
+                  "Private Company"
+                }
+                icon={Building2}
+              />
+
+              <CompanyInfoCard
+                label="Industry"
+                value={
+                  company.industry ||
+                  "Technology"
+                }
+                icon={Factory}
+              />
+
+              <CompanyInfoCard
+                label="Company Size"
+                value={
+                  company.company_size ||
+                  "Not specified"
+                }
+                icon={Users}
+              />
+
+              <CompanyInfoCard
+                label="Founded"
+                value={
+                  company.founded_year ||
+                  company.established_year ||
+                  "Not specified"
+                }
+                icon={CalendarDays}
+              />
+
+              <CompanyInfoCard
+                label="Headquarters"
+                value={
+                  [
+                    company.city,
+                    company.state,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") ||
+                  "Not specified"
+                }
+                icon={MapPinned}
+              />
+
+              <CompanyInfoCard
+                label="Account Status"
+                value={
+                  isActive
+                    ? "Active Account"
+                    : "Suspended Account"
+                }
+                icon={
+                  isActive
+                    ? ShieldCheck
+                    : ShieldAlert
+                }
+                success={isActive}
+              />
+
+            </div>
+
+          </section>
+
+
+          {/* =================================================
+              TABS
+          ================================================= */}
+
+          <div className="mb-6 overflow-x-auto border-b border-border">
+
+            <div className="flex min-w-max items-center gap-7">
+
+              {[
+                {
+                  key: "overview",
+                  label: "Overview",
+                },
+                {
+                  key: "jobs",
+                  label: "Jobs",
+                },
+                // {
+                //   key: "candidates",
+                //   label: "Candidates",
+                // },
+                // {
+                //   key: "subscription",
+                //   label: "Subscription & Credits",
+                // },
+              ].map((tab) => (
+
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() =>
+                    setActiveTab(tab.key)
+                  }
+                  className={`relative pb-3.5 text-sm font-medium transition ${
+                    activeTab === tab.key
+                      ? "font-bold text-primary"
+                      : "text-text-secondary hover:text-primary"
+                  }`}
+                >
+
+                  {tab.label}
+
+                  {activeTab === tab.key && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary" />
+                  )}
+
+                </button>
+
+              ))}
 
             </div>
 
           </div>
 
+
+          {/* =================================================
+              OVERVIEW TAB
+          ================================================= */}
+
+          {activeTab === "overview" && (
+            <OverviewTab
+              company={company}
+              isActive={isActive}
+            />
+          )}
+
+
+          {/* =================================================
+              JOBS TAB
+          ================================================= */}
+
+          {activeTab === "jobs" && (
+
+            <div className="space-y-5">
+
+
+              {/* =================================================
+                  SEARCH + FILTER
+              ================================================= */}
+
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+
+                <div className="relative w-full md:max-w-sm">
+
+                  <Search
+                    size={17}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
+                  />
+
+                  <input
+                    type="text"
+                    value={jobSearch}
+                    onChange={(event) =>
+                      setJobSearch(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Search jobs..."
+                    className="h-10 w-full rounded-lg border border-border bg-white pl-10 pr-4 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  />
+
+                </div>
+
+
+                <div className="flex flex-wrap items-center gap-2">
+
+                  <select
+                    value={jobStatus}
+                    onChange={(event) =>
+                      setJobStatus(
+                        event.target.value
+                      )
+                    }
+                    className="h-10 rounded-lg border border-border bg-white px-3 text-sm font-medium text-text outline-none focus:border-primary"
+                  >
+
+                    <option value="ALL">
+                      All Status
+                    </option>
+
+                    <option value="PUBLISHED">
+                      Published
+                    </option>
+
+                    <option value="DRAFT">
+                      Draft
+                    </option>
+
+                    <option value="CLOSED">
+                      Closed
+                    </option>
+
+                  </select>
+
+
+                  <button
+                    type="button"
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-medium text-text transition hover:bg-slate-50"
+                  >
+                    <RefreshCw size={16} />
+                    Refresh
+                  </button>
+
+                </div>
+
+              </div>
+
+
+              {/* =================================================
+                  DYNAMIC KPI CARDS
+              ================================================= */}
+
+              <CompanyJobKpiCards
+                jobs={jobs}
+              />
+
+
+              {/* =================================================
+                  RECENT 5 JOBS
+              ================================================= */}
+
+              <CompanyRecentJobs
+                jobs={filteredJobs}
+              />
+
+            </div>
+
+          )}
+
+
+          {/* =================================================
+              CANDIDATES TAB
+          ================================================= */}
+
+          {activeTab === "candidates" && (
+
+            <PlaceholderTab
+              icon={Users}
+              title="Candidates"
+              description="Candidate information will appear here when candidate data is available from the company API."
+            />
+
+          )}
+
+
+          {/* =================================================
+              SUBSCRIPTION TAB
+          ================================================= */}
+
+          {activeTab === "subscription" && (
+
+            <PlaceholderTab
+              icon={CreditCard}
+              title="Subscription & Credits"
+              description="Subscription and credit information will appear here when those details are available from the company API."
+            />
+
+          )}
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          SUSPEND MODAL
+      ===================================================== */}
+
+      {showSuspendModal && (
+        <ConfirmModal
+          type="suspend"
+          companyName={company.company_name}
+          loading={suspending}
+          onCancel={() =>
+            setShowSuspendModal(false)
+          }
+          onConfirm={handleSuspend}
+        />
+      )}
+
+
+      {/* =====================================================
+          ACTIVATE MODAL
+      ===================================================== */}
+
+      {showActivateModal && (
+        <ConfirmModal
+          type="activate"
+          companyName={company.company_name}
+          loading={activating}
+          onCancel={() =>
+            setShowActivateModal(false)
+          }
+          onConfirm={handleActivate}
+        />
+      )}
+
+    </AdminPageShell>
+  );
+}
+
+
+/* =========================================================
+   ADMIN PAGE SHELL
+========================================================= */
+
+function AdminPageShell({ children }) {
+  return (
+    <div className="h-screen overflow-hidden bg-[#f8f9ff]">
+
+      <DashboardSidebar />
+
+      <main className="ml-0 h-screen md:ml-72">
+
+        <div className="fixed left-0 right-0 top-0 z-50 md:left-72">
+          <DashboardNavbar />
+        </div>
+
+        <div className="h-screen overflow-y-auto pt-20">
+          {children}
         </div>
 
       </main>
-
-      {/* ================================================= */}
-      {/* SUSPEND MODAL */}
-      {/* ================================================= */}
-
-      {showSuspendModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
-
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-
-            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
-
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-100">
-
-                  <Ban
-                    size={20}
-                    className="text-red-600"
-                  />
-
-                </div>
-
-                <div>
-
-                  <h2 className="font-bold text-text-primary">
-                    Suspend Company
-                  </h2>
-
-                  <p className="mt-0.5 text-xs text-text-secondary">
-                    Account access restriction
-                  </p>
-
-                </div>
-
-              </div>
-
-              <button
-                onClick={() =>
-                  setShowSuspendModal(false)
-                }
-                disabled={suspending}
-                className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X size={18} />
-              </button>
-
-            </div>
-
-            <div className="px-6 py-6">
-
-              <div className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-rose-50 p-5">
-
-                <div className="flex items-start gap-3">
-
-                  <ShieldAlert
-                    size={20}
-                    className="mt-0.5 shrink-0 text-red-600"
-                  />
-
-                  <p className="text-sm leading-6 text-red-700">
-
-                    Are you sure you want to suspend{" "}
-
-                    <span className="font-bold">
-                      {company.company_name}
-                    </span>
-
-                    ? The company will no longer be able
-                    to log in until the account is reactivated.
-
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-                <button
-                  onClick={() =>
-                    setShowSuspendModal(false)
-                  }
-                  disabled={suspending}
-                  className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-text-secondary transition hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleSuspend}
-                  disabled={suspending}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-
-                  {suspending ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Suspending...
-                    </>
-                  ) : (
-                    <>
-                      <Ban size={16} />
-                      Suspend
-                    </>
-                  )}
-
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* ================================================= */}
-      {/* ACTIVATE MODAL */}
-      {/* ================================================= */}
-
-      {showActivateModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
-
-          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-
-            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
-
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100">
-
-                  <ShieldCheck
-                    size={20}
-                    className="text-emerald-600"
-                  />
-
-                </div>
-
-                <div>
-
-                  <h2 className="font-bold text-text-primary">
-                    Activate Company
-                  </h2>
-
-                  <p className="mt-0.5 text-xs text-text-secondary">
-                    Restore account access
-                  </p>
-
-                </div>
-
-              </div>
-
-              <button
-                onClick={() =>
-                  setShowActivateModal(false)
-                }
-                disabled={activating}
-                className="rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X size={18} />
-              </button>
-
-            </div>
-
-            <div className="px-6 py-6">
-
-              <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-5">
-
-                <div className="flex items-start gap-3">
-
-                  <ShieldCheck
-                    size={20}
-                    className="mt-0.5 shrink-0 text-emerald-600"
-                  />
-
-                  <p className="text-sm leading-6 text-emerald-700">
-
-                    Are you sure you want to activate{" "}
-
-                    <span className="font-bold">
-                      {company.company_name}
-                    </span>
-
-                    ? The company will regain access
-                    to its account.
-
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-                <button
-                  onClick={() =>
-                    setShowActivateModal(false)
-                  }
-                  disabled={activating}
-                  className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-text-secondary transition hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleActivate}
-                  disabled={activating}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-
-                  {activating ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Activating...
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck size={16} />
-                      Activate
-                    </>
-                  )}
-
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
 
     </div>
   );
 }
 
-// =====================================================
-// KPI CARD
-// =====================================================
 
-function KpiCard({
-  title,
-  value,
-  description,
+/* =========================================================
+   HERO INFO
+========================================================= */
+
+function HeroInfo({
   icon: Icon,
-  wrapper,
-  iconWrapper,
-  iconColor,
-  titleColor,
-  valueColor,
-  descriptionColor,
+  value,
 }) {
   return (
-    <div
-      className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${wrapper}`}
-    >
+    <div className="flex min-w-0 items-center gap-2 text-sm text-text-secondary">
 
-      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/50 blur-2xl" />
+      <Icon
+        size={17}
+        className="shrink-0"
+      />
 
-      <div className="relative flex items-center justify-between gap-4">
+      <span className="truncate">
+        {value}
+      </span>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   COMPANY INFORMATION CARD
+========================================================= */
+
+function CompanyInfoCard({
+  label,
+  value,
+  icon: Icon,
+  success = false,
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-slate-50/70 p-4 transition hover:border-blue-100 hover:bg-blue-50/30">
+
+      <div className="flex items-start gap-3">
+
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+            success
+              ? "bg-emerald-100 text-emerald-600"
+              : "bg-blue-100 text-primary"
+          }`}
+        >
+          <Icon size={17} />
+        </div>
 
         <div className="min-w-0">
 
-          <p className={`text-sm font-medium ${titleColor}`}>
-            {title}
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+            {label}
           </p>
 
-          <p className={`mt-2 truncate text-xl font-bold ${valueColor}`}>
+          <p
+            className={`mt-1.5 break-words text-sm font-semibold ${
+              success
+                ? "text-emerald-700"
+                : "text-text"
+            }`}
+          >
             {value}
           </p>
-
-          <p className={`mt-1 text-xs ${descriptionColor}`}>
-            {description}
-          </p>
-
-        </div>
-
-        <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ${iconWrapper}`}
-        >
-
-          <Icon
-            size={22}
-            className={iconColor}
-          />
 
         </div>
 
@@ -1295,29 +1055,333 @@ function KpiCard({
   );
 }
 
-// =====================================================
-// SECTION HEADER
-// =====================================================
 
-function SectionHeader({
-  icon: Icon,
-  title,
-  description,
+/* =========================================================
+   OVERVIEW TAB
+========================================================= */
+
+function OverviewTab({
+  company,
+  isActive,
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-blue-100 bg-gradient-to-r from-blue-50/70 via-white to-indigo-50/40 px-6 py-5 sm:px-7">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
 
-      <div className="flex items-center gap-3">
+      <div className="space-y-5 xl:col-span-2">
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-blue-200">
 
-          <Icon size={19} />
+        {/* COMPANY INFORMATION */}
+
+        <InfoSection
+          title="Company Information"
+          description="Business and organization details"
+          icon={Building2}
+        >
+
+          <InfoGrid>
+
+            <InfoTile
+              label="Company Name"
+              value={company.company_name}
+              icon={Building2}
+            />
+
+            <InfoTile
+              label="Industry"
+              value={company.industry}
+              icon={Factory}
+            />
+
+            <InfoTile
+              label="Company Size"
+              value={company.company_size}
+              icon={Users}
+            />
+
+            <InfoTile
+              label="Website"
+              value={company.website}
+              icon={Globe}
+              link
+            />
+
+          </InfoGrid>
+
+        </InfoSection>
+
+
+        {/* CONTACT */}
+
+        <InfoSection
+          title="Contact Information"
+          description="Primary company contact details"
+          icon={UserRound}
+        >
+
+          <InfoGrid>
+
+            <InfoTile
+              label="Contact Person"
+              value={company.contact_person}
+              icon={UserRound}
+            />
+
+            <InfoTile
+              label="Email"
+              value={
+                company.email ||
+                company.contact_email
+              }
+              icon={Mail}
+            />
+
+            <InfoTile
+              label="Phone"
+              value={
+                company.contact_phone ||
+                company.phone
+              }
+              icon={Phone}
+            />
+
+          </InfoGrid>
+
+        </InfoSection>
+
+
+        {/* LOCATION */}
+
+        <InfoSection
+          title="Company Location"
+          description="Registered business address"
+          icon={MapPinned}
+        >
+
+          <InfoGrid>
+
+            <InfoTile
+              label="Country"
+              value={company.country}
+              icon={Globe}
+            />
+
+            <InfoTile
+              label="State"
+              value={company.state}
+              icon={MapPin}
+            />
+
+            <InfoTile
+              label="City"
+              value={company.city}
+              icon={MapPinned}
+            />
+
+            <InfoTile
+              label="Address"
+              value={company.address}
+              icon={MapPin}
+            />
+
+          </InfoGrid>
+
+        </InfoSection>
+
+
+        {/* DESCRIPTION */}
+
+        <InfoSection
+          title="Company Description"
+          description="Business overview and introduction"
+          icon={Sparkles}
+        >
+
+          <div className="rounded-xl bg-slate-50 p-5">
+
+            <p className="whitespace-pre-wrap text-sm leading-7 text-text-secondary">
+              {company.description ||
+                "No company description provided."}
+            </p>
+
+          </div>
+
+        </InfoSection>
+
+      </div>
+
+
+      {/* RIGHT COLUMN */}
+
+      <div className="space-y-5">
+
+
+        {/* ACCOUNT STATUS */}
+
+        <InfoSection
+          title="Account Status"
+          description="Current company access status"
+          icon={
+            isActive
+              ? ShieldCheck
+              : ShieldAlert
+          }
+        >
+
+          <div
+            className={`rounded-xl border p-5 ${
+              isActive
+                ? "border-emerald-200 bg-emerald-50"
+                : "border-red-200 bg-red-50"
+            }`}
+          >
+
+            <div className="flex items-center gap-3">
+
+              {isActive ? (
+                <ShieldCheck
+                  size={24}
+                  className="text-emerald-600"
+                />
+              ) : (
+                <ShieldAlert
+                  size={24}
+                  className="text-red-600"
+                />
+              )}
+
+              <div>
+
+                <p
+                  className={`font-bold ${
+                    isActive
+                      ? "text-emerald-800"
+                      : "text-red-800"
+                  }`}
+                >
+                  {isActive
+                    ? "Active Account"
+                    : "Suspended Account"}
+                </p>
+
+                <p className="mt-1 text-xs text-text-secondary">
+                  {isActive
+                    ? "Login access enabled"
+                    : "Login access disabled"}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </InfoSection>
+
+
+        {/* VERIFICATION */}
+
+        <InfoSection
+          title="Verification Document"
+          description="Company verification file"
+          icon={FileText}
+        >
+
+          {company.verification_document ? (
+
+            <a
+              href={
+                company.verification_document
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+            >
+              <FileText size={17} />
+
+              View Document
+
+              <ExternalLink size={14} />
+
+            </a>
+
+          ) : (
+
+            <div className="rounded-xl border border-dashed border-border bg-slate-50 p-5 text-center text-sm text-text-secondary">
+              No verification document uploaded.
+            </div>
+
+          )}
+
+        </InfoSection>
+
+
+        {/* TIMELINE */}
+
+        <InfoSection
+          title="Company Timeline"
+          description="Important account dates"
+          icon={CalendarDays}
+        >
+
+          <div className="space-y-5">
+
+            <TimelineRow
+              label="Account Created"
+              value={formatDate(
+                company.created_at
+              )}
+              icon={CalendarDays}
+            />
+
+            <TimelineRow
+              label="Current Status"
+              value={
+                isActive
+                  ? "Active"
+                  : "Suspended"
+              }
+              icon={
+                isActive
+                  ? ShieldCheck
+                  : ShieldAlert
+              }
+            />
+
+          </div>
+
+        </InfoSection>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   INFO SECTION
+========================================================= */
+
+function InfoSection({
+  title,
+  description,
+  icon: Icon,
+  children,
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+
+      <div className="flex items-center gap-3 border-b border-border bg-slate-50 px-5 py-4">
+
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white">
+
+          <Icon size={18} />
 
         </div>
 
         <div>
 
-          <h2 className="text-base font-bold text-text-primary">
+          <h2 className="text-sm font-bold text-text sm:text-base">
             {title}
           </h2>
 
@@ -1329,66 +1393,72 @@ function SectionHeader({
 
       </div>
 
-      <div className="hidden h-1.5 w-10 rounded-full bg-primary/20 sm:block" />
+      <div className="p-5">
+        {children}
+      </div>
 
+    </section>
+  );
+}
+
+
+/* =========================================================
+   INFO GRID
+========================================================= */
+
+function InfoGrid({ children }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {children}
     </div>
   );
 }
 
-// =====================================================
-// INFO TILE
-// =====================================================
+
+/* =========================================================
+   INFO TILE
+========================================================= */
 
 function InfoTile({
   label,
   value,
   icon: Icon,
   link = false,
-  fullWidth = false,
 }) {
   return (
-    <div
-      className={`group bg-white p-5 transition-all duration-200 hover:bg-blue-50/60 ${
-        fullWidth ? "sm:col-span-2" : ""
-      }`}
-    >
+    <div className="rounded-xl border border-border bg-slate-50/60 p-4">
 
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
 
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-primary ring-1 ring-blue-200 transition group-hover:scale-105 group-hover:bg-primary group-hover:text-white">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-primary">
 
-          <Icon size={17} />
+          <Icon size={16} />
 
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
 
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
             {label}
           </p>
 
           {link && value ? (
+
             <a
               href={value}
               target="_blank"
               rel="noreferrer"
-              className="mt-1.5 flex items-start gap-2 break-all text-sm font-semibold leading-6 text-primary hover:underline"
+              className="mt-1.5 break-all text-sm font-semibold text-primary hover:underline"
             >
-
-              <span className="break-all">
-                {value}
-              </span>
-
-              <ExternalLink
-                size={13}
-                className="mt-1 shrink-0"
-              />
-
+              {value}
             </a>
+
           ) : (
-            <p className="mt-1.5 break-words text-sm font-semibold leading-6 text-slate-800">
+
+            <p className="mt-1.5 break-words text-sm font-semibold text-text">
               {value || "Not provided"}
             </p>
+
           )}
 
         </div>
@@ -1399,37 +1469,33 @@ function InfoTile({
   );
 }
 
-// =====================================================
-// CONTACT TILE
-// =====================================================
 
-function ContactTile({
+/* =========================================================
+   TIMELINE ROW
+========================================================= */
+
+function TimelineRow({
   label,
   value,
   icon: Icon,
-  last = false,
 }) {
   return (
-    <div
-      className={`group flex items-start gap-3 rounded-2xl p-3 transition hover:bg-blue-50/60 ${
-        !last ? "mb-2" : ""
-      }`}
-    >
+    <div className="flex items-center gap-3">
 
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-primary ring-1 ring-blue-200 transition group-hover:bg-primary group-hover:text-white">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-primary">
 
-        <Icon size={16} />
+        <Icon size={17} />
 
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0">
 
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
           {label}
         </p>
 
-        <p className="mt-1 break-words text-sm font-semibold text-slate-800">
-          {value || "Not provided"}
+        <p className="mt-1 text-sm font-semibold text-text">
+          {value}
         </p>
 
       </div>
@@ -1437,5 +1503,213 @@ function ContactTile({
     </div>
   );
 }
+
+
+/* =========================================================
+   PLACEHOLDER TAB
+========================================================= */
+
+function PlaceholderTab({
+  icon: Icon,
+  title,
+  description,
+}) {
+  return (
+    <section className="rounded-xl border border-border bg-white shadow-sm">
+
+      <div className="flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
+
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-primary">
+
+          <Icon size={27} />
+
+        </div>
+
+        <h2 className="mt-5 text-lg font-bold text-text">
+          {title}
+        </h2>
+
+        <p className="mt-2 max-w-lg text-sm leading-6 text-text-secondary">
+          {description}
+        </p>
+
+      </div>
+
+    </section>
+  );
+}
+
+
+/* =========================================================
+   CONFIRM MODAL
+========================================================= */
+
+function ConfirmModal({
+  type,
+  companyName,
+  loading,
+  onCancel,
+  onConfirm,
+}) {
+  const isSuspend = type === "suspend";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
+
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+
+        {/* HEADER */}
+
+        <div className="flex items-start justify-between border-b border-border px-6 py-5">
+
+          <div className="flex items-center gap-3">
+
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                isSuspend
+                  ? "bg-red-100 text-red-600"
+                  : "bg-emerald-100 text-emerald-600"
+              }`}
+            >
+
+              {isSuspend ? (
+                <Ban size={20} />
+              ) : (
+                <ShieldCheck size={20} />
+              )}
+
+            </div>
+
+            <div>
+
+              <h2 className="font-bold text-text">
+                {isSuspend
+                  ? "Suspend Company"
+                  : "Activate Company"}
+              </h2>
+
+              <p className="mt-0.5 text-xs text-text-secondary">
+                {isSuspend
+                  ? "Account access restriction"
+                  : "Restore account access"}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-slate-100 disabled:opacity-50"
+          >
+            <X size={17} />
+          </button>
+
+        </div>
+
+
+        {/* BODY */}
+
+        <div className="p-6">
+
+          <div
+            className={`rounded-xl border p-4 ${
+              isSuspend
+                ? "border-red-200 bg-red-50"
+                : "border-emerald-200 bg-emerald-50"
+            }`}
+          >
+
+            <p
+              className={`text-sm leading-6 ${
+                isSuspend
+                  ? "text-red-700"
+                  : "text-emerald-700"
+              }`}
+            >
+
+              Are you sure you want to{" "}
+
+              <span className="font-bold">
+                {isSuspend
+                  ? "suspend"
+                  : "activate"}
+              </span>
+
+              {" "}
+
+              <span className="font-bold">
+                {companyName}
+              </span>
+              ?
+
+            </p>
+
+          </div>
+
+
+          {/* ACTIONS */}
+
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={loading}
+              className="rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-text-secondary transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+
+
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+                isSuspend
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-emerald-600 hover:bg-emerald-700"
+              }`}
+            >
+
+              {loading ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+
+                  {isSuspend
+                    ? "Suspending..."
+                    : "Activating..."}
+                </>
+              ) : (
+                <>
+                  {isSuspend ? (
+                    <Ban size={16} />
+                  ) : (
+                    <ShieldCheck size={16} />
+                  )}
+
+                  {isSuspend
+                    ? "Suspend"
+                    : "Activate"}
+                </>
+              )}
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
 
 export default CompanyDetails;

@@ -3,10 +3,12 @@ import axios from "axios";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
+
 api.interceptors.request.use((config) => {
   const token =
     localStorage.getItem("accessToken") ||
     sessionStorage.getItem("accessToken");
+
 
   const authRoutes = [
     "/auth/login/",
@@ -21,20 +23,12 @@ api.interceptors.request.use((config) => {
     config.url?.startsWith(route)
   );
 
- if (token && !shouldSkipToken) {
+  if (token && !shouldSkipToken) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
-
-  config.headers.Authorization = `Bearer ${token}`;
-}
-
-
-return config;
+  return config;
 });
-export default api;
-
-
-
-
 
 api.interceptors.response.use(
   (response) => response,
@@ -67,24 +61,16 @@ api.interceptors.response.use(
         const newAccessToken = response.data.access;
 
         if (localStorage.getItem("refreshToken")) {
-          localStorage.setItem(
-            "accessToken",
-            newAccessToken
-          );
+          localStorage.setItem("accessToken", newAccessToken);
         } else {
-          sessionStorage.setItem(
-            "accessToken",
-            newAccessToken
-          );
+          sessionStorage.setItem("accessToken", newAccessToken);
         }
 
         originalRequest.headers.Authorization =
           `Bearer ${newAccessToken}`;
 
         return api(originalRequest);
-
       } catch (refreshError) {
-
         localStorage.clear();
         sessionStorage.clear();
 
@@ -97,3 +83,16 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Logout
+export const logout = () => {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+
+  sessionStorage.removeItem("accessToken");
+  sessionStorage.removeItem("refreshToken");
+
+  window.location.href = "/login";
+};
+
+export default api;

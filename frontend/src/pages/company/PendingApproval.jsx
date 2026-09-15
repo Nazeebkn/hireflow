@@ -34,14 +34,14 @@ function PendingApproval() {
         }
 
         if (company.approval_status === "REJECTED") {
-  clearInterval(interval);
+          clearInterval(interval);
 
-  toast.error(
-    "Your company registration has been rejected."
-  );
+          toast.error(
+            "Your company registration has been rejected."
+          );
 
-  navigate("/company/rejected");
-}
+          navigate("/company/rejected");
+        }
       } catch (error) {
         console.error(
           "Failed to check company approval status:",

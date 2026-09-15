@@ -9,6 +9,7 @@ import Companies from "../pages/admin/Companies";
 import CompanyDetails from "../pages/admin/CompanyDetails";
 import Candidates from "../pages/admin/Candidates";
 import CandidateDetails from "../pages/admin/CandidateDetails";
+import CandidateApplicationWorkspace from "../pages/admin/CandidateApplicationWorkspace";
 
 function AdminRoutes() {
   return (
@@ -51,6 +52,11 @@ function AdminRoutes() {
       <Route
         path="candidates/:candidateId"
         element={<CandidateDetails />}
+      />
+
+      <Route
+        path="candidates/:candidateId/applications"
+        element={<CandidateApplicationWorkspace />}
       />
     </Route>
   );

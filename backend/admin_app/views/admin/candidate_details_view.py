@@ -11,8 +11,8 @@ from admin_app.serializers.admin.candidate_details_serializer import (
 )
 
 from rest_framework.permissions import IsAuthenticated
-
 from admin_app.permissions import IsAdminUser
+
 
 class CandidateDetailsAPIView(APIView):
 
@@ -20,16 +20,21 @@ class CandidateDetailsAPIView(APIView):
         IsAuthenticated,
         IsAdminUser,
     ]
-    
+
     def get(self, request, candidate_id):
 
-        candidate = (
+        candidate, applications = (
             CandidateDetailsService.get_candidate_details(
                 candidate_id
             )
         )
 
-        serializer = CandidateDetailsSerializer(candidate)
+        serializer = CandidateDetailsSerializer(
+            candidate,
+            context={
+                "applications": applications,
+            },
+        )
 
         return Response(
             serializer.data,

@@ -23,6 +23,11 @@ from admin_app.views.admin.candidate_details_view import (
 from admin_app.views.admin.user_status_view import (
     UserStatusAPIView,
 )
+
+from admin_app.views.admin.candidate_applications_view import (
+    CandidateApplicationsAPIView,
+)
+
 urlpatterns = [
     path(
     "companies/pending/",
@@ -71,4 +76,10 @@ urlpatterns = [
     UserStatusAPIView.as_view(),
     name="user-status",
     ),
+    
+    path(
+    "candidates/<int:candidate_id>/applications/",
+    CandidateApplicationsAPIView.as_view(),
+    name="candidate-applications",
+),
 ]

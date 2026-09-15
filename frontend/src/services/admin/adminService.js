@@ -123,3 +123,12 @@ export const activateCandidate = async (
 
   return response.data;
 };
+
+
+export const getCandidateApplications = async (candidateId) => {
+  const response = await api.get(
+    `/admin/candidates/${candidateId}/applications/`
+  );
+
+  return response.data;
+};
