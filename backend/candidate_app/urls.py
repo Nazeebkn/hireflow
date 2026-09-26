@@ -26,10 +26,40 @@ from candidate_app.candidate_views.candidate_job.candidate_job_view import (
     CandidateApplicationDetailAPIView,
 )
 
+from candidate_app.candidate_views.notification.notification_views import (
+    CandidateNotificationListAPIView,
+    CandidateNotificationReadAPIView,
+    CandidateNotificationMarkAllReadAPIView,
+    CandidateNotificationUnreadCountAPIView,
+    CandidateNotificationClearAllAPIView,
+    CandidateNotificationDeleteAPIView,
+)
+
+# ============================================================
+# AI VIEWS
+# ============================================================
+
+from candidate_app.candidate_views.ai.ai_interview_views import (
+    StartAIInterviewAPIView,
+)
+
+from candidate_app.candidate_views.ai.resume_screening_view import (
+    ResumeScreeningReportAPIView,
+)
+
+from candidate_app.candidate_views.ai.ai_interview_question_views import (
+    AIInterviewQuestionsAPIView,
+)
+
+from candidate_app.candidate_views.ai.ai_interview_answer_views import (
+    SubmitAIInterviewAnswerAPIView,
+)
 
 urlpatterns = [
 
-    # Candidate Profile
+    # ============================================================
+    # CANDIDATE PROFILE
+    # ============================================================
 
     path(
         "profile/",
@@ -43,71 +73,64 @@ urlpatterns = [
         name="candidate-resume",
     ),
 
-    # Education
-
     path(
-        "educations/",
+        "profile/education/",
         CandidateEducationAPIView.as_view(),
         name="candidate-education",
     ),
 
     path(
-        "educations/<int:education_id>/",
+        "profile/education/<int:education_id>/",
         CandidateEducationDetailAPIView.as_view(),
         name="candidate-education-detail",
     ),
 
-    # Experience
-
     path(
-        "experiences/",
+        "profile/experience/",
         CandidateExperienceAPIView.as_view(),
         name="candidate-experience",
     ),
 
     path(
-        "experiences/<int:experience_id>/",
+        "profile/experience/<int:experience_id>/",
         CandidateExperienceDetailAPIView.as_view(),
         name="candidate-experience-detail",
     ),
 
-    # Skills
-
     path(
-        "skills/",
+        "profile/skills/",
         CandidateSkillAPIView.as_view(),
-        name="candidate-skill",
+        name="candidate-skills",
     ),
 
     path(
-        "skills/<int:skill_id>/",
+        "profile/skills/<int:skill_id>/",
         CandidateSkillDetailAPIView.as_view(),
         name="candidate-skill-detail",
     ),
 
-    # Job Preference
-
     path(
-        "job-preference/",
+        "profile/job-preference/",
         CandidateJobPreferenceAPIView.as_view(),
         name="candidate-job-preference",
     ),
 
-    # Profile Completion
-
     path(
-        "profile-completion/career/",
+        "profile/career-completion/",
         CareerProfileCompletionAPIView.as_view(),
         name="career-profile-completion",
     ),
 
     path(
-        "profile-completion/complete/",
+        "profile/completion/",
         CandidateProfileCompletionAPIView.as_view(),
-        name="candidate-profile-complete",
+        name="candidate-profile-completion",
     ),
 
-    # Dashboard
+
+    # ============================================================
+    # CANDIDATE DASHBOARD
+    # ============================================================
 
     path(
         "dashboard/",
@@ -115,7 +138,10 @@ urlpatterns = [
         name="candidate-dashboard",
     ),
 
-    # Jobs
+
+    # ============================================================
+    # JOBS
+    # ============================================================
 
     path(
         "jobs/",
@@ -129,18 +155,21 @@ urlpatterns = [
         name="candidate-job-detail",
     ),
 
-    # Job Application
-
     path(
         "jobs/<int:job_id>/apply/",
         CandidateJobApplicationAPIView.as_view(),
-        name="candidate-job-apply",
+        name="candidate-job-application",
     ),
-    
+
+
+    # ============================================================
+    # APPLICATIONS
+    # ============================================================
+
     path(
-    "applications/",
-    CandidateApplicationsAPIView.as_view(),
-    name="candidate-applications",
+        "applications/",
+        CandidateApplicationsAPIView.as_view(),
+        name="candidate-applications",
     ),
 
     path(
@@ -148,4 +177,79 @@ urlpatterns = [
         CandidateApplicationDetailAPIView.as_view(),
         name="candidate-application-detail",
     ),
+
+
+    # ============================================================
+    # AI RESUME SCREENING
+    # ============================================================
+
+    path(
+        "applications/<int:application_id>/resume-screening/",
+        ResumeScreeningReportAPIView.as_view(),
+        name="candidate-resume-screening-report",
+    ),
+
+
+    # ============================================================
+    # AI INTERVIEW
+    # ============================================================
+
+    path(
+        "interviews/<int:interview_id>/start/",
+        StartAIInterviewAPIView.as_view(),
+        name="start-ai-interview",
+    ),
+
+
+    # ============================================================
+    # NOTIFICATIONS
+    # ============================================================
+
+    path(
+        "notifications/",
+        CandidateNotificationListAPIView.as_view(),
+        name="candidate-notifications",
+    ),
+
+    path(
+        "notifications/<int:notification_id>/read/",
+        CandidateNotificationReadAPIView.as_view(),
+        name="candidate-notification-read",
+    ),
+
+    path(
+        "notifications/read-all/",
+        CandidateNotificationMarkAllReadAPIView.as_view(),
+        name="candidate-notification-mark-all-read",
+    ),
+
+    path(
+        "notifications/unread-count/",
+        CandidateNotificationUnreadCountAPIView.as_view(),
+        name="candidate-notification-unread-count",
+    ),
+
+    path(
+        "notifications/clear-all/",
+        CandidateNotificationClearAllAPIView.as_view(),
+        name="candidate-notification-clear-all",
+    ),
+
+    path(
+        "notifications/<int:notification_id>/",
+        CandidateNotificationDeleteAPIView.as_view(),
+        name="candidate-notification-delete",
+    ),
+    
+    path(
+    "interviews/<int:interview_id>/questions/",
+    AIInterviewQuestionsAPIView.as_view(),
+    name="ai-interview-questions",
+),
+    
+    path(
+    "interviews/questions/<int:question_id>/answer/",
+    SubmitAIInterviewAnswerAPIView.as_view(),
+    name="submit-ai-interview-answer",
+),
 ]

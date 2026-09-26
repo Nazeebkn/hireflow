@@ -1,6 +1,7 @@
 from django.db import models
-
+from core.storages import AudioCloudinaryStorage
 from users.models import User
+
 
 
 class CandidateProfile(models.Model):
@@ -297,3 +298,164 @@ class CandidateJobPreference(models.Model):
 
     def __str__(self):
         return self.preferred_job_role
+    
+    
+    
+    
+class Notification(models.Model):
+    class NotificationType(models.TextChoices):
+        RESUME_SCREENING_COMPLETED = (
+            "RESUME_SCREENING_COMPLETED",
+            "Resume Screening Completed",
+        )
+        AI_INTERVIEW_SCHEDULED = (
+            "AI_INTERVIEW_SCHEDULED",
+            "AI Interview Scheduled",
+        )
+        AI_INTERVIEW_REMINDER = (
+            "AI_INTERVIEW_REMINDER",
+            "AI Interview Reminder",
+        )
+        AI_INTERVIEW_COMPLETED = (
+            "AI_INTERVIEW_COMPLETED",
+            "AI Interview Completed",
+        )
+        AI_INTERVIEW_REPORT = (
+            "AI_INTERVIEW_REPORT",
+            "AI Interview Report Available",
+        )
+        AI_INTERVIEW_RESULT = (
+            "AI_INTERVIEW_RESULT",
+            "AI Interview Result",
+        )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="candidate_notifications",
+    )
+
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NotificationType.choices,
+    )
+
+    title = models.CharField(max_length=255)
+
+    message = models.TextField()
+
+    is_read = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    
+    
+    
+class AIInterviewQuestion(models.Model):
+
+    class QuestionType(models.TextChoices):
+        THEORY = "THEORY", "Theory"
+        CODING = "CODING", "Coding"
+
+    class Difficulty(models.TextChoices):
+        EASY = "EASY", "Easy"
+        MEDIUM = "MEDIUM", "Medium"
+        HARD = "HARD", "Hard"
+
+    interview = models.ForeignKey(
+        "company_app.AIInterview",
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+
+    question_text = models.TextField()
+
+    question_type = models.CharField(
+        max_length=20,
+        choices=QuestionType.choices,
+    )
+
+    difficulty = models.CharField(
+        max_length=20,
+        choices=Difficulty.choices,
+        default=Difficulty.MEDIUM,
+    )
+    
+    skill = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+    )
+
+    question_order = models.PositiveIntegerField()
+
+    programming_language = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+
+    starter_code = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    test_cases = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["question_order"]
+        unique_together = ("interview", "question_order")
+
+class AIInterviewAnswer(models.Model):
+
+    question = models.OneToOneField(
+        AIInterviewQuestion,
+        on_delete=models.CASCADE,
+        related_name="answer",
+    )
+
+    answer_text = models.TextField(
+        blank=True,
+        null=True,
+    )
+    
+    audio_recording = models.FileField(
+        upload_to="candidate/ai_interview_answers/",
+        storage=AudioCloudinaryStorage(),
+        blank=True,
+        null=True,
+    )
+
+    submitted_code = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    test_results = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    score = models.PositiveIntegerField(
+        default=0,
+    )
+
+    ai_feedback = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    submitted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
