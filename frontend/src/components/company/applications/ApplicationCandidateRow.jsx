@@ -1,6 +1,9 @@
 import { Eye, CalendarDays } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function ApplicationCandidateRow({ application }) {
+  const navigate = useNavigate();
+
   if (!application) {
     return null;
   }
@@ -39,10 +42,12 @@ function ApplicationCandidateRow({ application }) {
       case "RESUME_SCREENING":
         return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
 
+      case "SHORTLISTED":
+        return "bg-green-500/10 text-green-600 dark:text-green-400";
+
       case "AI_INTERVIEW":
         return "bg-purple-500/10 text-purple-600 dark:text-purple-400";
 
-      case "CLASSIFIED":
       case "SELECTED":
         return "bg-green-500/10 text-green-600 dark:text-green-400";
 
@@ -60,6 +65,12 @@ function ApplicationCandidateRow({ application }) {
     }
   };
 
+  const handleView = () => {
+    navigate(
+      `/company/applications/${application.id}`
+    );
+  };
+
   return (
     <div
       className="
@@ -75,18 +86,23 @@ function ApplicationCandidateRow({ application }) {
       "
     >
       <div className="flex items-center justify-between gap-4">
+
         {/* Candidate Information */}
+
         <div className="flex min-w-0 items-center gap-3">
+
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
             {initials}
           </div>
 
           <div className="min-w-0">
+
             <h3 className="truncate text-base font-semibold text-text">
               {candidateName}
             </h3>
 
             <div className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
+
               <CalendarDays
                 size={13}
                 strokeWidth={1.8}
@@ -95,12 +111,17 @@ function ApplicationCandidateRow({ application }) {
               <span>
                 Applied {appliedDate}
               </span>
+
             </div>
+
           </div>
+
         </div>
 
         {/* Status + Action */}
+
         <div className="flex shrink-0 items-center gap-2">
+
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusClasses()}`}
           >
@@ -109,8 +130,8 @@ function ApplicationCandidateRow({ application }) {
 
           <button
             type="button"
-            disabled
-            title="Candidate details are not available yet"
+            onClick={handleView}
+            title="View candidate application"
             className="
               inline-flex
               h-9
@@ -124,18 +145,24 @@ function ApplicationCandidateRow({ application }) {
               text-sm
               font-medium
               text-text-secondary
-              opacity-60
-              cursor-not-allowed
+              transition
+              hover:border-primary
+              hover:text-primary
+              hover:bg-primary/5
             "
           >
+
             <Eye
               size={15}
               strokeWidth={1.8}
             />
 
             <span>View</span>
+
           </button>
+
         </div>
+
       </div>
     </div>
   );

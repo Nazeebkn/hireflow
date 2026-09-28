@@ -19,6 +19,8 @@ import {
 
 import CompanyDashboardLayout from "../../components/company/dashboard/CompanyDashboardLayout";
 
+import { getCompanyProfile } from "../../services/company/companyService";
+
 import {
   getCompanyJobs,
   updateJob,
@@ -57,6 +59,9 @@ function JobEdit() {
   const [formData, setFormData] =
     useState(initialForm);
 
+  const [companyProfile, setCompanyProfile] =
+    useState(null);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -68,6 +73,28 @@ function JobEdit() {
 
   const [fieldErrors, setFieldErrors] =
     useState({});
+
+
+  /* =====================================================
+     FETCH COMPANY PROFILE
+  ===================================================== */
+
+  useEffect(() => {
+    const fetchCompanyProfile = async () => {
+      try {
+        const data = await getCompanyProfile();
+
+        setCompanyProfile(data);
+      } catch (profileError) {
+        console.error(
+          "Failed to load company profile:",
+          profileError
+        );
+      }
+    };
+
+    fetchCompanyProfile();
+  }, []);
 
 
   /* =====================================================
@@ -408,7 +435,11 @@ function JobEdit() {
 
   if (loading) {
     return (
-      <CompanyDashboardLayout>
+      <CompanyDashboardLayout
+        title="Edit Job"
+        subtitle="Update and manage your job posting."
+        companyProfile={companyProfile}
+      >
 
         <div className="flex min-h-[60vh] items-center justify-center">
 
@@ -435,7 +466,11 @@ function JobEdit() {
 
   if (error && !formData.title) {
     return (
-      <CompanyDashboardLayout>
+      <CompanyDashboardLayout
+        title="Edit Job"
+        subtitle="Update and manage your job posting."
+        companyProfile={companyProfile}
+      >
 
         <div className="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4">
 
@@ -489,7 +524,11 @@ function JobEdit() {
   ===================================================== */
 
   return (
-    <CompanyDashboardLayout>
+    <CompanyDashboardLayout
+      title="Edit Job"
+      subtitle="Update and manage your job posting."
+      companyProfile={companyProfile}
+    >
 
       <div className="mx-auto w-full max-w-5xl">
 

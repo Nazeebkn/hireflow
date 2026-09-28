@@ -10,8 +10,11 @@ from company_app.views.job.job_views import (
 from company_app.views.dashboard.dashboard_views import (
     CompanyDashboardAPIView,
 )
+
+
 from company_app.views.job_application.company_job_application_views import (
     CompanyJobApplicationsAPIView,
+    CompanyApplicationDetailAPIView,
 )
 
 urlpatterns = [
@@ -56,5 +59,15 @@ urlpatterns = [
     "jobs/<int:job_id>/applications/",
     CompanyJobApplicationsAPIView.as_view(),
     name="company-job-applications",
-),
+    ),
+    
+
+    
+    path(
+    "applications/<int:application_id>/",
+    CompanyApplicationDetailAPIView.as_view(),
+    name="company-application-detail",
+),   
+    
+
 ]

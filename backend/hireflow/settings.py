@@ -149,9 +149,9 @@ GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID")
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -207,3 +207,14 @@ SIMPLE_JWT = {
 
     "UPDATE_LAST_LOGIN": True,
 }
+
+
+CELERY_BROKER_URL = config(
+    "CELERY_BROKER_URL",
+    default="redis://redis:6379/0",
+)
+
+CELERY_RESULT_BACKEND = config(
+    "CELERY_RESULT_BACKEND",
+    default="redis://redis:6379/0",
+)

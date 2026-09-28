@@ -133,6 +133,10 @@ const handleChange = (event) => {
       ? "Verification document is required."
       : "",
 
+    company_logo: !formData.company_logo
+  ? "Company logo is required."
+  : "",
+
   
   };
 

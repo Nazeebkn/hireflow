@@ -6,6 +6,15 @@ from company_app.models import Company
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Existing company profile update:
+        # verification document is not required
+        if self.instance is not None:
+            self.fields["verification_document"].required = False
+
 
     class Meta:
         model = Company

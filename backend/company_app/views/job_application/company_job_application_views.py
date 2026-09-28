@@ -1,9 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
 from company_app.serializers.job_application.company_job_application_serializer import (
     CompanyJobApplicationSerializer,
+)
+
+from company_app.serializers.job_application.job_application_serializer import (
+    JobApplicationSerializer,
 )
 
 from company_app.services.job_application.job_application_service import (
@@ -52,6 +55,42 @@ class CompanyJobApplicationsAPIView(APIView):
 
         except Exception as error:
 
+            return Response(
+                {
+                    "message": str(error),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+            
+            
+class CompanyApplicationDetailAPIView(APIView):
+
+    def get(self, request, application_id):
+        try:
+            company = getattr(
+                request.user,
+                "company_profile",
+                None,
+            )
+
+            application = (
+                JobApplicationService.get_application_for_company(
+                    company=company,
+                    application_id=application_id,
+                )
+            )
+
+            serializer = JobApplicationSerializer(
+                application
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as error:
             return Response(
                 {
                     "message": str(error),

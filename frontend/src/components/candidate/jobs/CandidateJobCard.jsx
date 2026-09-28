@@ -17,7 +17,8 @@ function CandidateJobCard({
 }) {
   const [applied, setApplied] = useState(false);
   const [checkingApplication, setCheckingApplication] = useState(true);
-
+  console.log("JOB DATA:", job);
+  console.log("COMPANY LOGO:", job?.company_logo);
   const formatEmploymentType = (type) => {
     if (!type) return "Not specified";
 
@@ -41,6 +42,22 @@ function CandidateJobCard({
       : "Any";
 
     return `${minimum} - ${maximum}`;
+  };
+
+  /*
+   * Convert company logo path into a usable URL.
+   */
+  const getCompanyLogoUrl = (logo) => {
+    if (!logo) return null;
+
+    if (
+      logo.startsWith("http://") ||
+      logo.startsWith("https://")
+    ) {
+      return logo;
+    }
+
+    return `http://127.0.0.1:8000${logo}`;
   };
 
   /*
@@ -103,19 +120,36 @@ function CandidateJobCard({
       <div className="flex gap-4 pr-10">
 
         {/* Company Logo */}
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background p-2">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
           {job.company_logo ? (
             <img
-              src={job.company_logo}
-              alt={job.company_name || "Company"}
-              className="h-full w-full object-contain"
+              src={getCompanyLogoUrl(job.company_logo)}
+              alt={`${job.company_name || "Company"} logo`}
+              className="h-full w-full rounded-md object-contain"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+
+                const fallback =
+                  event.currentTarget.nextElementSibling;
+
+                if (fallback) {
+                  fallback.style.display = "flex";
+                }
+              }}
             />
-          ) : (
+          ) : null}
+
+          {/* Default Icon */}
+          <div
+            className={`h-full w-full items-center justify-center ${
+              job.company_logo ? "hidden" : "flex"
+            }`}
+          >
             <BriefcaseBusiness
               size={23}
               className="text-primary"
             />
-          )}
+          </div>
         </div>
 
         {/* Job Info */}

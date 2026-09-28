@@ -8,3 +8,22 @@ services:
       - ./backend/.env
     volumes:
       - ./backend:/app
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: hireflow-redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: ./backend
+    container_name: hireflow-celery
+    command: celery -A hireflow worker --loglevel=info
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis

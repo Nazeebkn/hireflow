@@ -6,6 +6,10 @@ import Jobs from "../pages/candidate/Jobs";
 import CandidateJobDetails from "../pages/candidate/CandidateJobDetails";
 import MyApplications from "../pages/candidate/MyApplications";
 import CandidateApplicationDetail from "../pages/candidate/CandidateApplicationDetail";
+import CandidateProfile from "../pages/candidate/CandidateProfile";
+import CandidateSettings from "../pages/candidate/settings/CandidateSettings";
+import AIInterviewPage from "../pages/candidate/ai-interview/AIInterviewPage";
+import AIInterviewSession from "../pages/candidate/ai-interview/AIInterviewSession";
 
 function CandidateRoutes() {
   return (
@@ -41,6 +45,25 @@ function CandidateRoutes() {
         element={<CandidateApplicationDetail />}
       />
 
+      <Route
+        path="profile"
+        element={<CandidateProfile />}
+      />
+
+      <Route
+        path="settings"
+        element={<CandidateSettings />}
+      />
+
+      <Route
+        path="interviews/:interviewId"
+        element={<AIInterviewPage />}
+      />
+
+      <Route
+    path="interviews/:interviewId/session"
+    element={<AIInterviewSession />}
+/>
     </Route>
   );
 }

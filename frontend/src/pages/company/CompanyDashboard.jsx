@@ -132,7 +132,11 @@ function CompanyDashboard() {
 
 
   return (
-    <CompanyDashboardLayout companyProfile={companyProfile}>
+   <CompanyDashboardLayout
+  title="Dashboard"
+  subtitle="Manage your recruitment activities"
+  companyProfile={companyProfile}
+>
 
       <div className="space-y-6">
 

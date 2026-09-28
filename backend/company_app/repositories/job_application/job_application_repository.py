@@ -82,3 +82,21 @@ class JobApplicationRepository:
             .select_related("company")
             .first()
         )
+        
+        
+        
+    @staticmethod
+    def get_application_by_id_for_company(company, application_id):
+        return (
+            JobApplication.objects
+            .filter(
+                id=application_id,
+                job__company=company,
+            )
+            .select_related(
+                "candidate",
+                "job",
+                "job__company",
+            )
+            .first()
+        )   

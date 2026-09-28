@@ -24,6 +24,8 @@ import {
 
 import CompanyDashboardLayout from "../../components/company/dashboard/CompanyDashboardLayout";
 
+import { getCompanyProfile } from "../../services/company/companyService";
+
 import { getJobApplications } from "../../services/company/jobApplicationService";
 
 import {
@@ -196,7 +198,7 @@ function getApplicationStatusLabel(status) {
     APPLIED: "Applied",
     RESUME_SCREENING: "Resume Screening",
     AI_INTERVIEW: "AI Interview",
-    CLASSIFIED: "Shortlisted",
+    SHORTLISTED: "Shortlisted",
     SELECTED: "Selected",
     FINAL_INTERVIEW: "Final HR",
     HIRED: "Hired",
@@ -227,9 +229,8 @@ function getApplicationStatusStyle(status) {
 
     AI_INTERVIEW:
       "bg-violet-50 text-violet-700 border border-violet-100",
-
-    CLASSIFIED:
-      "bg-amber-50 text-amber-700 border border-amber-100",
+SHORTLISTED:
+  "bg-amber-50 text-amber-700 border border-amber-100",
 
     SELECTED:
       "bg-emerald-50 text-emerald-700 border border-emerald-100",
@@ -424,6 +425,9 @@ function JobDetails() {
 
   const [job, setJob] = useState(null);
 
+  const [companyProfile, setCompanyProfile] =
+    useState(null);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -453,6 +457,28 @@ function JobDetails() {
 
   const [successToast, setSuccessToast] =
     useState("");
+
+
+  /* =====================================================
+     FETCH COMPANY PROFILE
+  ===================================================== */
+
+  useEffect(() => {
+    const fetchCompanyProfile = async () => {
+      try {
+        const data = await getCompanyProfile();
+
+        setCompanyProfile(data);
+      } catch (profileError) {
+        console.error(
+          "Failed to load company profile:",
+          profileError
+        );
+      }
+    };
+
+    fetchCompanyProfile();
+  }, []);
 
 
   /* =====================================================
@@ -611,12 +637,12 @@ function JobDetails() {
     const total =
       applications.length;
 
-    const shortlisted =
-      applications.filter(
-        (application) =>
-          application.status === "CLASSIFIED" ||
-          application.status === "SELECTED"
-      ).length;
+const shortlisted =
+  applications.filter(
+    (application) =>
+      application.status === "SHORTLISTED" ||
+      application.status === "SELECTED"
+  ).length;
 
     const finalHR =
       applications.filter(
@@ -831,7 +857,11 @@ function JobDetails() {
 
   if (loading) {
     return (
-      <CompanyDashboardLayout>
+      <CompanyDashboardLayout
+        title="Job Details"
+        subtitle="View and manage your job posting."
+        companyProfile={companyProfile}
+      >
 
         <div className="flex min-h-[70vh] items-center justify-center">
 
@@ -858,7 +888,11 @@ function JobDetails() {
 
   if (error || !job) {
     return (
-      <CompanyDashboardLayout>
+      <CompanyDashboardLayout
+        title="Job Details"
+        subtitle="View and manage your job posting."
+        companyProfile={companyProfile}
+      >
 
         <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center px-6">
 
@@ -907,7 +941,11 @@ function JobDetails() {
 
   return (
     <>
-      <CompanyDashboardLayout>
+      <CompanyDashboardLayout
+        title="Job Details"
+        subtitle="View and manage your job posting."
+        companyProfile={companyProfile}
+      >
 
         <SuccessToast
           message={successToast}

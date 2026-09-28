@@ -15,12 +15,14 @@ import {
   getCompanies,
   getPendingCompanies,
   getCandidates,
+  getActiveJobsCount,
 } from "../../../services/admin/adminService";
 
 function DashboardStats() {
   const [companies, setCompanies] = useState([]);
   const [pendingCompanies, setPendingCompanies] = useState([]);
   const [candidates, setCandidates] = useState([]);
+  const [activeJobsCount, setActiveJobsCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -36,10 +38,12 @@ function DashboardStats() {
         companiesData,
         pendingCompaniesData,
         candidatesData,
+        activeJobsData,
       ] = await Promise.all([
         getCompanies(),
         getPendingCompanies(),
         getCandidates(),
+        getActiveJobsCount(),
       ]);
 
       console.log("Dashboard Companies:", companiesData);
@@ -50,6 +54,10 @@ function DashboardStats() {
       console.log(
         "Dashboard Candidates:",
         candidatesData,
+      );
+      console.log(
+        "Dashboard Active Jobs:",
+        activeJobsData,
       );
 
       setCompanies(
@@ -69,6 +77,10 @@ function DashboardStats() {
           ? candidatesData
           : [],
       );
+
+      setActiveJobsCount(
+        activeJobsData?.active_jobs_count ?? 0,
+      );
     } catch (error) {
       console.error(
         "Failed to fetch dashboard statistics:",
@@ -78,6 +90,7 @@ function DashboardStats() {
       setCompanies([]);
       setPendingCompanies([]);
       setCandidates([]);
+      setActiveJobsCount(0);
     } finally {
       setLoading(false);
     }
@@ -251,9 +264,9 @@ function DashboardStats() {
 
     {
       title: "Active Jobs",
-      value: "—",
+      value: activeJobsCount,
       description: "Currently accepting applications",
-      trend: "API required",
+      trend: "Live",
       icon: Briefcase,
 
       card:

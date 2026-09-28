@@ -27,3 +27,25 @@ export const getCandidateApplicationById = async (
 
     return response.data;
 };
+
+
+// AI Resume Screening Report
+export const getResumeScreeningReport = async (
+    applicationId
+) => {
+    const response = await api.get(
+        `/candidate/applications/${applicationId}/resume-screening/`
+    );
+
+    return response.data;
+};
+
+
+// Start AI Interview
+export const startAIInterview = async (interviewId) => {
+    const response = await api.post(
+        `/candidate/interviews/${interviewId}/start/`
+    );
+
+    return response.data;
+};

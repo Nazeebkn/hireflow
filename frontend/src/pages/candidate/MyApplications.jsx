@@ -71,14 +71,16 @@ const MyApplications = () => {
   const statusLabels = {
     APPLIED: "Applied",
     RESUME_SCREENING: "AI Resume Screening",
+    SHORTLISTED: "Shortlisted",
     AI_INTERVIEW: "AI Interview",
-    CLASSIFIED: "Classified",
     SELECTED: "Selected",
     FINAL_INTERVIEW: "Final Interview",
     HIRED: "Hired",
     REJECTED: "Rejected",
   };
 
+
+  // ================= NORMAL PIPELINE =================
 
   const pipelineStages = [
     {
@@ -90,12 +92,12 @@ const MyApplications = () => {
       label: "AI Resume",
     },
     {
-      key: "AI_INTERVIEW",
-      label: "AI Interview",
+      key: "SHORTLISTED",
+      label: "Shortlisted",
     },
     {
-      key: "CLASSIFIED",
-      label: "Classification",
+      key: "AI_INTERVIEW",
+      label: "AI Interview",
     },
     {
       key: "SELECTED",
@@ -110,6 +112,41 @@ const MyApplications = () => {
       label: "Hired",
     },
   ];
+
+
+  // ================= GET APPLICATION PIPELINE =================
+
+  const getApplicationPipeline = (status) => {
+
+    /*
+     * Rejected applications are shown as:
+     *
+     * Applied → AI Resume → Rejected
+     *
+     * Later recruitment stages are hidden because
+     * the application did not progress further.
+     */
+
+    if (status === "REJECTED") {
+      return [
+        {
+          key: "APPLIED",
+          label: "Applied",
+        },
+        {
+          key: "RESUME_SCREENING",
+          label: "AI Resume",
+        },
+        {
+          key: "REJECTED",
+          label: "Rejected",
+          rejected: true,
+        },
+      ];
+    }
+
+    return pipelineStages;
+  };
 
 
   // ================= FORMAT DATE =================
@@ -158,9 +195,21 @@ const MyApplications = () => {
   // ================= GET CURRENT STAGE =================
 
   const getStageIndex = (status) => {
-    const index = pipelineStages.findIndex(
+    const stages = getApplicationPipeline(status);
+
+    const index = stages.findIndex(
       (stage) => stage.key === status
     );
+
+    /*
+     * For REJECTED, the dynamic pipeline contains
+     * REJECTED as the final stage.
+     */
+    if (status === "REJECTED") {
+      return stages.findIndex(
+        (stage) => stage.key === "REJECTED"
+      );
+    }
 
     return index === -1 ? 0 : index;
   };
@@ -229,8 +278,8 @@ const MyApplications = () => {
       [
         "APPLIED",
         "RESUME_SCREENING",
+        "SHORTLISTED",
         "AI_INTERVIEW",
-        "CLASSIFIED",
         "SELECTED",
         "FINAL_INTERVIEW",
       ].includes(application.status)
@@ -267,9 +316,11 @@ const MyApplications = () => {
         </div>
 
         <main className="flex min-w-0 flex-1 items-center justify-center">
+
           <p className="text-sm text-text-secondary">
             Loading your applications...
           </p>
+
         </main>
 
       </div>
@@ -513,8 +564,8 @@ const MyApplications = () => {
                             "ALL",
                             "APPLIED",
                             "RESUME_SCREENING",
+                            "SHORTLISTED",
                             "AI_INTERVIEW",
-                            "CLASSIFIED",
                             "SELECTED",
                             "FINAL_INTERVIEW",
                             "HIRED",
@@ -646,14 +697,19 @@ const MyApplications = () => {
                   {filteredApplications.map(
                     (application) => {
 
+                      const isRejected =
+                        application.status ===
+                        "REJECTED";
+
+                      const applicationPipeline =
+                        getApplicationPipeline(
+                          application.status
+                        );
+
                       const currentStageIndex =
                         getStageIndex(
                           application.status
                         );
-
-                      const isRejected =
-                        application.status ===
-                        "REJECTED";
 
                       return (
                         <div
@@ -759,7 +815,7 @@ const MyApplications = () => {
                                 </div>
 
 
-                                {/* Status */}
+                                {/* ================= CURRENT STATUS ================= */}
 
                                 <div
                                   className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold ${
@@ -790,54 +846,65 @@ const MyApplications = () => {
 
                               <div className="mt-6 overflow-x-auto pb-2">
 
-                                <div className="min-w-[680px]">
+                                <div
+                                  className={`${
+                                    isRejected
+                                      ? "min-w-[360px]"
+                                      : "min-w-[680px]"
+                                  }`}
+                                >
 
                                   <div className="relative">
 
 
-                                    {/* Background Line */}
+                                    {/* ================= BACKGROUND LINE ================= */}
 
                                     <div className="absolute left-0 right-0 top-3.5 h-0.5 bg-border" />
 
 
-                                    {/* Progress Line */}
+                                    {/* ================= PROGRESS LINE ================= */}
 
-                                    {!isRejected && (
-                                      <div
-                                        className="absolute left-0 top-3.5 h-0.5 bg-primary"
-                                        style={{
-                                          width: `${
-                                            pipelineStages.length === 1
-                                              ? 0
-                                              : (currentStageIndex /
-                                                  (pipelineStages.length -
-                                                    1)) *
-                                                100
-                                          }%`,
-                                        }}
-                                      />
-                                    )}
+                                    <div
+                                      className={`absolute left-0 top-3.5 h-0.5 ${
+                                        isRejected
+                                          ? "bg-red-500"
+                                          : "bg-primary"
+                                      }`}
+                                      style={{
+                                        width: `${
+                                          applicationPipeline.length <=
+                                          1
+                                            ? 0
+                                            : (currentStageIndex /
+                                                (applicationPipeline.length -
+                                                  1)) *
+                                              100
+                                        }%`,
+                                      }}
+                                    />
 
 
-                                    {/* Pipeline Stages */}
+                                    {/* ================= PIPELINE STAGES ================= */}
 
                                     <div className="relative z-10 flex justify-between">
 
-                                      {pipelineStages.map(
+                                      {applicationPipeline.map(
                                         (
                                           stage,
                                           index
                                         ) => {
 
-                                          const completed =
-                                            !isRejected &&
-                                            index <=
-                                              currentStageIndex;
-
-                                          const current =
-                                            !isRejected &&
+                                          const isCurrent =
                                             index ===
-                                              currentStageIndex;
+                                            currentStageIndex;
+
+                                          const isRejectedStage =
+                                            stage.key ===
+                                            "REJECTED";
+
+                                          const completed =
+                                            index <
+                                            currentStageIndex;
 
                                           return (
                                             <div
@@ -847,15 +914,25 @@ const MyApplications = () => {
                                               className="flex w-24 flex-col items-center gap-2"
                                             >
 
+                                              {/* Stage Circle */}
+
                                               <div
                                                 className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                                                  completed
+                                                  isRejectedStage
+                                                    ? "bg-red-500 text-white ring-4 ring-red-500/10"
+                                                    : completed ||
+                                                      isCurrent
                                                     ? "bg-primary text-white"
                                                     : "border-2 border-border bg-surface text-text-secondary"
                                                 }`}
                                               >
 
-                                                {completed ? (
+                                                {isRejectedStage ? (
+                                                  <span className="text-xs font-bold">
+                                                    ×
+                                                  </span>
+                                                ) : completed ||
+                                                  isCurrent ? (
                                                   <Check size={14} />
                                                 ) : (
                                                   <span className="h-2 w-2 rounded-full bg-current opacity-50" />
@@ -864,16 +941,22 @@ const MyApplications = () => {
                                               </div>
 
 
+                                              {/* Stage Label */}
+
                                               <span
                                                 className={`text-center text-[10px] ${
-                                                  current
+                                                  isRejectedStage
+                                                    ? "font-bold text-red-500"
+                                                    : isCurrent
                                                     ? "font-bold text-primary"
                                                     : completed
                                                     ? "font-medium text-text"
                                                     : "text-text-secondary"
                                                 }`}
                                               >
-                                                {stage.label}
+                                                {
+                                                  stage.label
+                                                }
                                               </span>
 
                                             </div>
@@ -897,13 +980,6 @@ const MyApplications = () => {
                           {/* ================= CARD ACTIONS ================= */}
 
                           <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
-
-                            <button
-                              type="button"
-                              className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-text-secondary transition hover:border-red-300 hover:text-red-500"
-                            >
-                              Withdraw Application
-                            </button>
 
                             <button
                               type="button"

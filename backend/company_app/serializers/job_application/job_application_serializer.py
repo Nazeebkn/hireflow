@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from company_app.models import JobApplication, Job
+from company_app.models import JobApplication, Job, AIInterview
 
 
 class JobApplicationSerializer(serializers.ModelSerializer):
@@ -17,11 +17,9 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    company_logo = serializers.CharField(
-        source="job.company.company_logo",
-        read_only=True,
-        allow_null=True,
-    )
+    company_logo = serializers.SerializerMethodField()
+    
+    ai_interview = serializers.SerializerMethodField()
 
     job_location = serializers.CharField(
         source="job.location",
@@ -48,6 +46,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             "job_title",
             "company_name",
             "company_logo",
+            "ai_interview",
             "job_location",
             "work_mode",
             "employment_type",
@@ -80,6 +79,32 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             f"{obj.candidate.first_name} "
             f"{obj.candidate.last_name}"
         ).strip()
+
+    def get_company_logo(self, obj):
+        if (
+            obj.job
+            and obj.job.company
+            and obj.job.company.company_logo
+        ):
+            return obj.job.company.company_logo.url
+
+        return None
+    
+    
+    def get_ai_interview(self, obj):
+        interview = getattr(obj, "ai_interview", None)
+
+        if not interview:
+            return None
+
+        return {
+            "id": interview.id,
+            "scheduled_at": interview.scheduled_at,
+            "duration": interview.duration,
+            "status": interview.status,
+            "started_at": interview.started_at,
+            "completed_at": interview.completed_at,
+        }
 
     def validate_job(self, value):
         if not value:

@@ -21,6 +21,8 @@ import CandidateDashboardSidebar from "../../components/candidate/dashboard/Cand
 
 import {
     getCandidateApplicationById,
+    getResumeScreeningReport,
+    startAIInterview,
 } from "../../services/candidate/candidateJobApplicationService";
 
 
@@ -34,6 +36,14 @@ const CandidateApplicationDetail = () => {
 
     const [activeTab, setActiveTab] = useState("overview");
 
+    const [resumeReport, setResumeReport] = useState(null);
+    const [resumeReportLoading, setResumeReportLoading] = useState(false);
+    const [resumeReportError, setResumeReportError] = useState("");
+
+    const [interviewCountdown, setInterviewCountdown] = useState("");
+    const [startingInterview, setStartingInterview] = useState(false);
+    const [interviewStartError, setInterviewStartError] = useState("");
+
 
     // =========================================================
     // STATUS LABELS
@@ -42,8 +52,8 @@ const CandidateApplicationDetail = () => {
     const statusLabels = {
         APPLIED: "Applied",
         RESUME_SCREENING: "AI Resume Screening",
+        SHORTLISTED: "Shortlisted",
         AI_INTERVIEW: "AI Interview",
-        CLASSIFIED: "Classified",
         SELECTED: "Selected",
         FINAL_INTERVIEW: "Final Interview",
         HIRED: "Hired",
@@ -65,12 +75,12 @@ const CandidateApplicationDetail = () => {
             label: "AI Screening",
         },
         {
-            key: "AI_INTERVIEW",
-            label: "AI Interview",
+            key: "SHORTLISTED",
+            label: "Shortlisted",
         },
         {
-            key: "CLASSIFIED",
-            label: "Classification",
+            key: "AI_INTERVIEW",
+            label: "AI Interview",
         },
         {
             key: "SELECTED",
@@ -105,17 +115,12 @@ const CandidateApplicationDetail = () => {
         {
             key: "resume",
             label: "AI Resume Report",
-            available: false,
+            available: true,
         },
         {
             key: "interview",
-            label: "AI Interview Report",
-            available: false,
-        },
-        {
-            key: "technical",
-            label: "Technical Interview",
-            available: false,
+            label: "AI Interview",
+            available: true,
         },
         {
             key: "activity",
@@ -161,6 +166,49 @@ const CandidateApplicationDetail = () => {
 
         fetchApplication();
     }, [applicationId]);
+
+
+    // =========================================================
+    // FETCH RESUME SCREENING REPORT
+    // =========================================================
+
+    const fetchResumeReport = async () => {
+        try {
+            setResumeReportLoading(true);
+            setResumeReportError("");
+
+            const data =
+                await getResumeScreeningReport(
+                    applicationId
+                );
+
+            setResumeReport(data.screening);
+
+        } catch (error) {
+            console.error(
+                "Failed to fetch resume screening report:",
+                error?.response?.data
+            );
+
+            const statusCode =
+                error?.response?.status;
+
+            if (statusCode === 404) {
+                setResumeReportError(
+                    "Resume screening report is not available yet."
+                );
+            } else {
+                setResumeReportError(
+                    error?.response?.data?.detail ||
+                    error?.response?.data?.message ||
+                    "Failed to load resume screening report."
+                );
+            }
+
+        } finally {
+            setResumeReportLoading(false);
+        }
+    };
 
 
     // =========================================================
@@ -218,6 +266,31 @@ const CandidateApplicationDetail = () => {
 
 
     // =========================================================
+    // FORMAT INTERVIEW TIME
+    // =========================================================
+
+    const formatInterviewTime = (date) => {
+        if (!date) {
+            return "Not available";
+        }
+
+        const parsedDate = new Date(date);
+
+        if (Number.isNaN(parsedDate.getTime())) {
+            return "Not available";
+        }
+
+        return parsedDate.toLocaleTimeString(
+            "en-IN",
+            {
+                hour: "numeric",
+                minute: "2-digit",
+            }
+        );
+    };
+
+
+    // =========================================================
     // FORMAT VALUE
     // =========================================================
 
@@ -244,10 +317,12 @@ const CandidateApplicationDetail = () => {
             return 0;
         }
 
-        const index = pipelineStages.findIndex(
-            (stage) =>
-                stage.key === application.status
-        );
+        const index =
+            pipelineStages.findIndex(
+                (stage) =>
+                    stage.key ===
+                    application.status
+            );
 
         return index === -1 ? 0 : index;
     }, [application]);
@@ -312,11 +387,11 @@ const CandidateApplicationDetail = () => {
             RESUME_SCREENING:
                 "Your resume is being evaluated against the job requirements.",
 
+            SHORTLISTED:
+                "Your resume screening is complete and you have been shortlisted for the AI interview.",
+
             AI_INTERVIEW:
                 "Your application has progressed to the AI interview stage.",
-
-            CLASSIFIED:
-                "Your application has been classified based on the recruitment process.",
 
             SELECTED:
                 "Your application has been selected for the next stage.",
@@ -375,6 +450,103 @@ const CandidateApplicationDetail = () => {
             );
         }
     };
+
+
+    // =========================================================
+    // AI INTERVIEW COUNTDOWN
+    // =========================================================
+
+    useEffect(() => {
+        const interview = application?.ai_interview;
+
+        if (!interview || interview.status !== "SCHEDULED") {
+            setInterviewCountdown("");
+            return;
+        }
+
+        const updateCountdown = () => {
+            const scheduledTime = new Date(
+                interview.scheduled_at
+            ).getTime();
+
+            const difference =
+                scheduledTime - Date.now();
+
+            if (difference <= 0) {
+                setInterviewCountdown(
+                    "Interview is ready to start."
+                );
+                return;
+            }
+
+            const totalSeconds = Math.floor(
+                difference / 1000
+            );
+
+            const days = Math.floor(
+                totalSeconds / 86400
+            );
+
+            const hours = Math.floor(
+                (totalSeconds % 86400) / 3600
+            );
+
+            const minutes = Math.floor(
+                (totalSeconds % 3600) / 60
+            );
+
+            const seconds =
+                totalSeconds % 60;
+
+            if (days > 0) {
+                setInterviewCountdown(
+                    `${days}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`
+                );
+                return;
+            }
+
+            setInterviewCountdown(
+                `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`
+            );
+        };
+
+        updateCountdown();
+
+        const interval = setInterval(
+            updateCountdown,
+            1000
+        );
+
+        return () => clearInterval(interval);
+    }, [
+        application?.ai_interview?.scheduled_at,
+        application?.ai_interview?.status,
+    ]);
+
+
+    // =========================================================
+    // START AI INTERVIEW
+    // =========================================================
+
+  const handleStartAIInterview = () => {
+    const interview = application?.ai_interview;
+
+    if (!interview) {
+        return;
+    }
+
+    const scheduledTime = new Date(
+        interview.scheduled_at
+    ).getTime();
+
+    if (Date.now() < scheduledTime) {
+        return;
+    }
+
+    navigate(
+        `/candidate/interviews/${interview.id}`
+    );
+};
 
 
     // =========================================================
@@ -551,12 +723,7 @@ const CandidateApplicationDetail = () => {
 
                         <section className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
 
-                            {/* Job information */}
-
                             <div className="flex min-w-0 items-start gap-4">
-
-
-                                {/* Company logo */}
 
                                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background p-2">
 
@@ -581,8 +748,6 @@ const CandidateApplicationDetail = () => {
                                 </div>
 
 
-                                {/* Job details */}
-
                                 <div className="min-w-0">
 
                                     <div className="flex flex-wrap items-center gap-3">
@@ -591,7 +756,6 @@ const CandidateApplicationDetail = () => {
                                             {application.job_title ||
                                                 "Job Title"}
                                         </h1>
-
 
                                         <span
                                             className={`rounded-full px-3 py-1 text-[10px] font-bold ${
@@ -610,7 +774,6 @@ const CandidateApplicationDetail = () => {
 
 
                                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text-secondary sm:text-sm">
-
 
                                         <span className="flex items-center gap-1.5">
 
@@ -680,8 +843,6 @@ const CandidateApplicationDetail = () => {
                             </div>
 
 
-                            {/* Header actions */}
-
                             <div className="flex shrink-0 flex-wrap gap-2">
 
                                 <button
@@ -718,12 +879,8 @@ const CandidateApplicationDetail = () => {
 
                             <div className="relative min-w-[760px]">
 
-                                {/* Background line */}
-
                                 <div className="absolute left-5 right-5 top-5 h-0.5 bg-border" />
 
-
-                                {/* Progress line */}
 
                                 {!isRejected && (
                                     <div
@@ -744,8 +901,6 @@ const CandidateApplicationDetail = () => {
                                     />
                                 )}
 
-
-                                {/* Pipeline */}
 
                                 <div className="relative z-10 flex justify-between">
 
@@ -837,7 +992,7 @@ const CandidateApplicationDetail = () => {
                             TABS + CONTENT
                         ================================================= */}
 
-                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-12">
 
 
                             {/* =================================================
@@ -864,12 +1019,21 @@ const CandidateApplicationDetail = () => {
                                                     !tab.available
                                                 }
                                                 onClick={() => {
+                                                    if (!tab.available) {
+                                                        return;
+                                                    }
+
+                                                    setActiveTab(
+                                                        tab.key
+                                                    );
+
                                                     if (
-                                                        tab.available
+                                                        tab.key ===
+                                                            "resume" &&
+                                                        !resumeReport &&
+                                                        !resumeReportLoading
                                                     ) {
-                                                        setActiveTab(
-                                                            tab.key
-                                                        );
+                                                        fetchResumeReport();
                                                     }
                                                 }}
                                                 className={`border-b-2 px-1 pb-3 pt-1 text-xs font-semibold transition ${
@@ -905,15 +1069,7 @@ const CandidateApplicationDetail = () => {
                                     "overview" && (
                                     <div className="space-y-5">
 
-
-                                        {/* =========================
-                                            SUMMARY + CURRENT STAGE
-                                        ========================= */}
-
                                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-
-                                            {/* Application Summary */}
 
                                             <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
 
@@ -932,7 +1088,6 @@ const CandidateApplicationDetail = () => {
 
 
                                                 <div className="space-y-4">
-
 
                                                     <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
 
@@ -1019,8 +1174,6 @@ const CandidateApplicationDetail = () => {
                                             </section>
 
 
-                                            {/* Current Stage */}
-
                                             <section className="relative overflow-hidden rounded-2xl border border-primary/10 bg-primary/5 p-5 shadow-sm">
 
                                                 <div className="mb-5 flex items-center justify-between">
@@ -1100,9 +1253,7 @@ const CandidateApplicationDetail = () => {
                                         </div>
 
 
-                                        {/* =================================================
-                                            SUBMITTED RESUME
-                                        ================================================= */}
+                                        {/* SUBMITTED RESUME */}
 
                                         <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
 
@@ -1194,14 +1345,9 @@ const CandidateApplicationDetail = () => {
                                         </section>
 
 
-                                        {/* =================================================
-                                            UPCOMING + LATEST UPDATES
-                                        ================================================= */}
+                                        {/* UPCOMING + LATEST UPDATES */}
 
                                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
-
-                                            {/* Upcoming Actions */}
 
                                             <section className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background p-5 text-center">
 
@@ -1227,8 +1373,6 @@ const CandidateApplicationDetail = () => {
                                             </section>
 
 
-                                            {/* Latest Updates */}
-
                                             <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
 
                                                 <div className="mb-5 flex items-center justify-between">
@@ -1245,7 +1389,6 @@ const CandidateApplicationDetail = () => {
 
 
                                                 <div className="space-y-5">
-
 
                                                     <div className="flex gap-3">
 
@@ -1307,6 +1450,928 @@ const CandidateApplicationDetail = () => {
 
 
                                 {/* =================================================
+                                    AI RESUME REPORT
+                                ================================================= */}
+
+                                {activeTab === "resume" && (
+                                    <section className="space-y-5">
+
+                                        {resumeReportLoading && (
+                                            <section className="flex min-h-[350px] items-center justify-center rounded-2xl border border-border bg-surface p-8 shadow-sm">
+
+                                                <div className="text-center">
+
+                                                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+
+                                                    <p className="mt-4 text-sm font-semibold text-text">
+                                                        Loading AI Resume Report...
+                                                    </p>
+
+                                                    <p className="mt-1 text-xs text-text-secondary">
+                                                        Please wait while we load your screening results.
+                                                    </p>
+
+                                                </div>
+
+                                            </section>
+                                        )}
+
+
+                                        {!resumeReportLoading &&
+                                            resumeReportError && (
+                                                <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+
+                                                    <div className="p-8 text-center sm:p-10">
+
+                                                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+
+                                                            <FileText
+                                                                size={28}
+                                                                className="text-primary"
+                                                            />
+
+                                                        </div>
+
+                                                        <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                            AI Resume Screening
+                                                        </p>
+
+                                                        <h2 className="mt-2 text-lg font-bold text-text">
+                                                            Resume Screening Report
+                                                        </h2>
+
+                                                        <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-text-secondary">
+
+                                                            {resumeReportError ===
+                                                            "Resume screening report is not available yet."
+                                                                ? "Your resume screening is still being processed. The AI-generated report will appear here once the screening is completed."
+                                                                : resumeReportError}
+
+                                                        </p>
+
+
+                                                        <div className="mx-auto mt-6 max-w-md rounded-xl border border-border bg-background p-4 text-left">
+
+                                                            <div className="flex gap-3">
+
+                                                                <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+
+                                                                <div>
+
+                                                                    <p className="text-xs font-semibold text-text">
+                                                                        Application Status
+                                                                    </p>
+
+                                                                    <p className="mt-1 text-xs text-text-secondary">
+                                                                        {statusLabels[
+                                                                            application.status
+                                                                        ] ||
+                                                                            application.status}
+                                                                    </p>
+
+                                                                </div>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </section>
+                                            )}
+
+
+                                        {!resumeReportLoading &&
+                                            !resumeReportError &&
+                                            resumeReport && (
+                                                <>
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                                                            <div>
+
+                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                                    AI Resume Analysis
+                                                                </p>
+
+                                                                <h2 className="mt-1 text-lg font-bold text-text">
+                                                                    Resume Screening Report
+                                                                </h2>
+
+                                                                <p className="mt-1 text-xs text-text-secondary">
+                                                                    AI-generated evaluation of your resume against this job.
+                                                                </p>
+
+                                                            </div>
+
+
+                                                            <span
+                                                                className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[10px] font-bold ${
+                                                                    resumeReport.recommendation ===
+                                                                    "SHORTLISTED"
+                                                                        ? "bg-primary/10 text-primary"
+                                                                        : "bg-red-50 text-red-600"
+                                                                }`}
+                                                            >
+                                                                {formatValue(
+                                                                    resumeReport.recommendation
+                                                                )}
+                                                            </span>
+
+                                                        </div>
+
+                                                    </section>
+
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+
+                                                            <div>
+
+                                                                <p className="text-xs font-semibold text-text-secondary">
+                                                                    Overall Match Score
+                                                                </p>
+
+                                                                <p className="mt-2 text-4xl font-black text-primary">
+
+                                                                    {
+                                                                        resumeReport.overall_score
+                                                                    }
+
+                                                                    <span className="text-lg text-text-secondary">
+                                                                        /100
+                                                                    </span>
+
+                                                                </p>
+
+                                                            </div>
+
+
+                                                            <div className="w-full max-w-md">
+
+                                                                <div className="mb-2 flex items-center justify-between">
+
+                                                                    <span className="text-[10px] font-semibold text-text-secondary">
+                                                                        Resume Match
+                                                                    </span>
+
+                                                                    <span className="text-xs font-bold text-primary">
+
+                                                                        {
+                                                                            resumeReport.overall_score
+                                                                        }
+                                                                        %
+
+                                                                    </span>
+
+                                                                </div>
+
+
+                                                                <div className="h-2.5 overflow-hidden rounded-full bg-background">
+
+                                                                    <div
+                                                                        className="h-full rounded-full bg-primary transition-all"
+                                                                        style={{
+                                                                            width: `${Math.min(
+                                                                                Math.max(
+                                                                                    resumeReport.overall_score ||
+                                                                                        0,
+                                                                                    0
+                                                                                ),
+                                                                                100
+                                                                            )}%`,
+                                                                        }}
+                                                                    />
+
+                                                                </div>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </section>
+
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <div className="mb-5">
+
+                                                            <h2 className="text-base font-bold text-text">
+                                                                Score Breakdown
+                                                            </h2>
+
+                                                            <p className="mt-1 text-xs text-text-secondary">
+                                                                How your resume matches the job requirements.
+                                                            </p>
+
+                                                        </div>
+
+
+                                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                                                            {[
+                                                                {
+                                                                    label: "Skills Match",
+                                                                    value: resumeReport.skills_score,
+                                                                },
+                                                                {
+                                                                    label: "Experience Match",
+                                                                    value: resumeReport.experience_score,
+                                                                },
+                                                                {
+                                                                    label: "Education Match",
+                                                                    value: resumeReport.education_score,
+                                                                },
+                                                            ].map(
+                                                                (item) => (
+
+                                                                    <div
+                                                                        key={
+                                                                            item.label
+                                                                        }
+                                                                        className="rounded-xl border border-border bg-background p-4"
+                                                                    >
+
+                                                                        <div className="flex items-center justify-between gap-4">
+
+                                                                            <span className="text-xs font-semibold text-text">
+                                                                                {
+                                                                                    item.label
+                                                                                }
+                                                                            </span>
+
+                                                                            <span className="text-sm font-bold text-primary">
+
+                                                                                {
+                                                                                    item.value
+                                                                                }
+                                                                                %
+
+                                                                            </span>
+
+                                                                        </div>
+
+
+                                                                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
+
+                                                                            <div
+                                                                                className="h-full rounded-full bg-primary"
+                                                                                style={{
+                                                                                    width: `${Math.min(
+                                                                                        Math.max(
+                                                                                            item.value ||
+                                                                                                0,
+                                                                                            0
+                                                                                        ),
+                                                                                        100
+                                                                                    )}%`,
+                                                                                }}
+                                                                            />
+
+                                                                        </div>
+
+                                                                    </div>
+
+                                                                )
+                                                            )}
+
+                                                        </div>
+
+                                                    </section>
+
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <h2 className="text-base font-bold text-text">
+                                                            AI Summary
+                                                        </h2>
+
+                                                        <p className="mt-3 text-sm leading-6 text-text-secondary">
+                                                            {
+                                                                resumeReport.summary
+                                                            }
+                                                        </p>
+
+                                                    </section>
+
+
+                                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+                                                        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                            <h2 className="text-base font-bold text-text">
+                                                                Strengths
+                                                            </h2>
+
+                                                            {resumeReport.strengths?.length ? (
+                                                                <ul className="mt-4 space-y-3">
+
+                                                                    {resumeReport.strengths.map(
+                                                                        (
+                                                                            strength,
+                                                                            index
+                                                                        ) => (
+
+                                                                            <li
+                                                                                key={
+                                                                                    index
+                                                                                }
+                                                                                className="flex gap-3 text-sm leading-5 text-text-secondary"
+                                                                            >
+
+                                                                                <CheckCircle2
+                                                                                    size={
+                                                                                        17
+                                                                                    }
+                                                                                    className="mt-0.5 shrink-0 text-primary"
+                                                                                />
+
+                                                                                <span>
+                                                                                    {
+                                                                                        strength
+                                                                                    }
+                                                                                </span>
+
+                                                                            </li>
+
+                                                                        )
+                                                                    )}
+
+                                                                </ul>
+                                                            ) : (
+                                                                <p className="mt-3 text-xs text-text-secondary">
+                                                                    No strengths were identified.
+                                                                </p>
+                                                            )}
+
+                                                        </section>
+
+
+                                                        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                            <h2 className="text-base font-bold text-text">
+                                                                Gaps
+                                                            </h2>
+
+                                                            {resumeReport.gaps?.length ? (
+                                                                <ul className="mt-4 space-y-3">
+
+                                                                    {resumeReport.gaps.map(
+                                                                        (
+                                                                            gap,
+                                                                            index
+                                                                        ) => (
+
+                                                                            <li
+                                                                                key={
+                                                                                    index
+                                                                                }
+                                                                                className="flex gap-3 text-sm leading-5 text-text-secondary"
+                                                                            >
+
+                                                                                <Circle
+                                                                                    size={
+                                                                                        15
+                                                                                    }
+                                                                                    className="mt-1 shrink-0 text-text-secondary"
+                                                                                />
+
+                                                                                <span>
+                                                                                    {
+                                                                                        gap
+                                                                                    }
+                                                                                </span>
+
+                                                                            </li>
+
+                                                                        )
+                                                                    )}
+
+                                                                </ul>
+                                                            ) : (
+                                                                <p className="mt-3 text-xs text-text-secondary">
+                                                                    No significant gaps were identified.
+                                                                </p>
+                                                            )}
+
+                                                        </section>
+
+                                                    </div>
+
+
+                                                    <div className="flex items-center justify-between px-1">
+
+                                                        <span className="text-[10px] text-text-secondary">
+                                                            Report generated{" "}
+                                                            {formatDateTime(
+                                                                resumeReport.created_at
+                                                            )}
+                                                        </span>
+
+                                                    </div>
+
+                                                </>
+                                            )}
+
+                                    </section>
+                                )}
+
+
+                                {/* =================================================
+                                    AI INTERVIEW
+                                ================================================= */}
+
+                                {activeTab === "interview" && (
+                                    <section className="space-y-5">
+
+                                        <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+
+                                            <div className="flex items-start gap-4">
+
+                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+
+                                                    <CalendarDays
+                                                        size={23}
+                                                        className="text-primary"
+                                                    />
+
+                                                </div>
+
+
+                                                <div>
+
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                        AI Interview
+                                                    </p>
+
+                                                    <h2 className="mt-1 text-lg font-bold text-text">
+                                                        AI Interview Details
+                                                    </h2>
+
+                                                    <p className="mt-2 text-sm leading-6 text-text-secondary">
+                                                        Your AI interview details, instructions and interview report will appear here based on your interview status.
+                                                    </p>
+
+                                                </div>
+
+                                            </div>
+
+                                        </section>
+
+
+                                        {/* ============================================
+                                            NO INTERVIEW YET
+                                        ============================================ */}
+
+                                        {!application.ai_interview &&
+                                            application.status ===
+                                                "SHORTLISTED" && (
+
+                                                <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+
+                                                    <div className="flex items-start gap-3">
+
+                                                        <CheckCircle2
+                                                            size={20}
+                                                            className="mt-0.5 shrink-0 text-primary"
+                                                        />
+
+                                                        <div>
+
+                                                            <h3 className="text-sm font-bold text-text">
+                                                                You have been shortlisted
+                                                            </h3>
+
+                                                            <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                Your AI interview will be scheduled automatically. Once it is scheduled, the interview date, time and duration will appear here.
+                                                            </p>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </section>
+                                            )}
+
+
+                                        {/* ============================================
+                                            INTERVIEW SCHEDULED
+                                        ============================================ */}
+
+                                        {application.ai_interview &&
+                                            application.ai_interview.status ===
+                                                "SCHEDULED" && (
+
+                                                <section className="space-y-5">
+
+                                                    <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+
+                                                        <div className="flex items-start gap-3">
+
+                                                            <CalendarDays
+                                                                size={20}
+                                                                className="mt-0.5 shrink-0 text-primary"
+                                                            />
+
+                                                            <div>
+
+                                                                <h3 className="text-sm font-bold text-text">
+                                                                    AI Interview Scheduled
+                                                                </h3>
+
+                                                                <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                    Your AI interview has been scheduled successfully. Please be ready at the scheduled time.
+                                                                </p>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </section>
+
+
+                                                    {/* Interview Information */}
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <h3 className="text-base font-bold text-text">
+                                                            Interview Information
+                                                        </h3>
+
+                                                        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                                                            <div className="rounded-xl border border-border bg-background p-4">
+
+                                                                <div className="flex items-center gap-2">
+
+                                                                    <CalendarDays
+                                                                        size={17}
+                                                                        className="text-primary"
+                                                                    />
+
+                                                                    <span className="text-xs font-semibold text-text-secondary">
+                                                                        Date
+                                                                    </span>
+
+                                                                </div>
+
+                                                                <p className="mt-3 text-sm font-bold text-text">
+                                                                    {formatDate(
+                                                                        application
+                                                                            .ai_interview
+                                                                            .scheduled_at
+                                                                    )}
+                                                                </p>
+
+                                                            </div>
+
+
+                                                            <div className="rounded-xl border border-border bg-background p-4">
+
+                                                                <div className="flex items-center gap-2">
+
+                                                                    <CalendarDays
+                                                                        size={17}
+                                                                        className="text-primary"
+                                                                    />
+
+                                                                    <span className="text-xs font-semibold text-text-secondary">
+                                                                        Time
+                                                                    </span>
+
+                                                                </div>
+
+                                                                <p className="mt-3 text-sm font-bold text-text">
+                                                                    {formatInterviewTime(
+                                                                        application
+                                                                            .ai_interview
+                                                                            .scheduled_at
+                                                                    )}
+                                                                </p>
+
+                                                            </div>
+
+
+                                                            <div className="rounded-xl border border-border bg-background p-4">
+
+                                                                <div className="flex items-center gap-2">
+
+                                                                    <CalendarDays
+                                                                        size={17}
+                                                                        className="text-primary"
+                                                                    />
+
+                                                                    <span className="text-xs font-semibold text-text-secondary">
+                                                                        Duration
+                                                                    </span>
+
+                                                                </div>
+
+                                                                <p className="mt-3 text-sm font-bold text-text">
+                                                                    {
+                                                                        application
+                                                                            .ai_interview
+                                                                            .duration
+                                                                    }{" "}
+                                                                    minutes
+                                                                </p>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </section>
+
+
+                                                    {/* Interview Instructions */}
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <h3 className="text-base font-bold text-text">
+                                                            Interview Instructions
+                                                        </h3>
+
+                                                        <div className="mt-4 space-y-3">
+
+                                                            <div className="flex gap-3">
+
+                                                                <CheckCircle2
+                                                                    size={17}
+                                                                    className="mt-0.5 shrink-0 text-primary"
+                                                                />
+
+                                                                <p className="text-sm text-text-secondary">
+                                                                    Make sure you have a stable internet connection.
+                                                                </p>
+
+                                                            </div>
+
+
+                                                            <div className="flex gap-3">
+
+                                                                <CheckCircle2
+                                                                    size={17}
+                                                                    className="mt-0.5 shrink-0 text-primary"
+                                                                />
+
+                                                                <p className="text-sm text-text-secondary">
+                                                                    Use a quiet environment for the interview.
+                                                                </p>
+
+                                                            </div>
+
+
+                                                            <div className="flex gap-3">
+
+                                                                <CheckCircle2
+                                                                    size={17}
+                                                                    className="mt-0.5 shrink-0 text-primary"
+                                                                />
+
+                                                                <p className="text-sm text-text-secondary">
+                                                                    Be ready before the scheduled interview time.
+                                                                </p>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </section>
+
+
+                                                    {/* Start Interview */}
+
+                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+
+                                                        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+
+                                                            <div>
+
+                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                                    Interview Access
+                                                                </p>
+
+                                                                <h3 className="mt-1 text-base font-bold text-text">
+                                                                    Ready for your interview?
+                                                                </h3>
+
+                                                                <p className="mt-1 max-w-lg text-xs leading-5 text-text-secondary">
+                                                                    The interview can be started at the scheduled time. Please make sure you are ready before starting.
+                                                                </p>
+
+                                                                {interviewCountdown && (
+                                                                    <div className="mt-4 inline-flex items-center rounded-lg bg-background px-3 py-2">
+                                                                        <span className="text-xs font-semibold text-text">
+                                                                            {interviewCountdown}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                            </div>
+
+
+                                                            <div className="flex shrink-0 flex-col items-stretch gap-2">
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleStartAIInterview}
+                                                                    disabled={
+                                                                        startingInterview ||
+                                                                        new Date(
+                                                                            application.ai_interview.scheduled_at
+                                                                        ).getTime() > Date.now()
+                                                                    }
+                                                                    className={`inline-flex min-w-[170px] items-center justify-center rounded-lg px-5 py-2.5 text-xs font-semibold transition ${
+                                                                        startingInterview ||
+                                                                        new Date(
+                                                                            application.ai_interview.scheduled_at
+                                                                        ).getTime() > Date.now()
+                                                                            ? "cursor-not-allowed bg-background text-text-secondary opacity-60"
+                                                                            : "bg-primary text-white hover:opacity-90"
+                                                                    }`}
+                                                                >
+                                                                    {startingInterview
+                                                                        ? "Starting..."
+                                                                        : "Start Interview"}
+                                                                </button>
+
+
+                                                                {new Date(
+                                                                    application.ai_interview.scheduled_at
+                                                                ).getTime() > Date.now() && (
+                                                                    <p className="text-center text-[10px] text-text-secondary">
+                                                                        Available at the scheduled time
+                                                                    </p>
+                                                                )}
+
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        {interviewStartError && (
+                                                            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                                                                <p className="text-xs text-red-600">
+                                                                    {interviewStartError}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                    </section>
+
+                                                </section>
+                                            )}
+
+
+                                        {/* ============================================
+                                            INTERVIEW IN PROGRESS
+                                        ============================================ */}
+
+                                        {application.ai_interview &&
+                                            application.ai_interview.status ===
+                                                "IN_PROGRESS" && (
+
+                                                <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+
+                                                    <div className="flex items-start gap-3">
+
+                                                        <Circle
+                                                            size={20}
+                                                            className="mt-0.5 shrink-0 fill-primary text-primary"
+                                                        />
+
+                                                        <div>
+
+                                                            <h3 className="text-sm font-bold text-text">
+                                                                AI Interview In Progress
+                                                            </h3>
+
+                                                            <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                Your AI interview is currently in progress.
+                                                            </p>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </section>
+                                            )}
+
+
+                                        {/* ============================================
+                                            INTERVIEW COMPLETED
+                                        ============================================ */}
+
+                                        {application.ai_interview &&
+                                            application.ai_interview.status ===
+                                                "COMPLETED" && (
+
+                                                <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+
+                                                    <div className="flex items-start gap-3">
+
+                                                        <CheckCircle2
+                                                            size={20}
+                                                            className="mt-0.5 shrink-0 text-primary"
+                                                        />
+
+                                                        <div>
+
+                                                            <h3 className="text-sm font-bold text-text">
+                                                                AI Interview Completed
+                                                            </h3>
+
+                                                            <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                Your AI interview has been completed. Your interview report will be available here once the evaluation is complete.
+                                                            </p>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </section>
+                                            )}
+
+
+                                        {/* ============================================
+                                            MISSED
+                                        ============================================ */}
+
+                                        {application.ai_interview &&
+                                            application.ai_interview.status ===
+                                                "MISSED" && (
+
+                                                <section className="rounded-2xl border border-red-200 bg-red-50 p-6">
+
+                                                    <div className="flex items-start gap-3">
+
+                                                        <Circle
+                                                            size={20}
+                                                            className="mt-0.5 shrink-0 text-red-600"
+                                                        />
+
+                                                        <div>
+
+                                                            <h3 className="text-sm font-bold text-red-700">
+                                                                AI Interview Missed
+                                                            </h3>
+
+                                                            <p className="mt-2 text-xs leading-5 text-red-600">
+                                                                This interview was marked as missed because it was not started within the allowed time.
+                                                            </p>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </section>
+                                            )}
+
+
+                                        {/* ============================================
+                                            NO INTERVIEW AVAILABLE
+                                        ============================================ */}
+
+                                        {!application.ai_interview &&
+                                            application.status !==
+                                                "SHORTLISTED" && (
+
+                                                <section className="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-border bg-background p-8 text-center">
+
+                                                    <div>
+
+                                                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface">
+
+                                                            <CalendarDays
+                                                                size={24}
+                                                                className="text-text-secondary"
+                                                            />
+
+                                                        </div>
+
+
+                                                        <h3 className="mt-4 text-base font-bold text-text">
+                                                            AI Interview Not Available Yet
+                                                        </h3>
+
+
+                                                        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-secondary">
+                                                            AI interview details will appear here when your application reaches the interview stage.
+                                                        </p>
+
+                                                    </div>
+
+                                                </section>
+                                            )}
+
+                                    </section>
+                                )}
+
+
+                                {/* =================================================
                                     ACTIVITY
                                 ================================================= */}
 
@@ -1332,7 +2397,6 @@ const CandidateApplicationDetail = () => {
 
 
                                         <div className="space-y-6">
-
 
                                             <div className="flex gap-4">
 
@@ -1403,50 +2467,6 @@ const CandidateApplicationDetail = () => {
                                 )}
 
 
-                                {/* =================================================
-                                    FUTURE TABS
-                                ================================================= */}
-
-                                {activeTab !==
-                                    "overview" &&
-                                    activeTab !==
-                                        "activity" && (
-                                        <section className="flex min-h-[350px] items-center justify-center rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
-
-                                            <div>
-
-                                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-background">
-
-                                                    <FileText
-                                                        size={24}
-                                                        className="text-text-secondary"
-                                                    />
-
-                                                </div>
-
-
-                                                <h2 className="mt-4 text-base font-bold text-text">
-
-                                                    {
-                                                        tabs.find(
-                                                            (tab) =>
-                                                                tab.key ===
-                                                                activeTab
-                                                        )?.label
-                                                    }
-
-                                                </h2>
-
-
-                                                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-secondary">
-                                                    This section will become available when the corresponding recruitment stage and data are implemented in HireFlow.
-                                                </p>
-
-                                            </div>
-
-                                        </section>
-                                    )}
-
                             </div>
 
 
@@ -1454,20 +2474,20 @@ const CandidateApplicationDetail = () => {
                                 RIGHT SIDEBAR
                             ================================================= */}
 
-                            <aside className="space-y-5 lg:col-span-3">
+                            <aside className="min-w-0 space-y-5 lg:col-span-3">
 
 
                                 {/* Overall Progress */}
 
                                 <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
 
-                                    <div className="mb-4 flex items-center justify-between">
+                                    <div className="mb-4 flex items-start justify-between gap-3">
 
-                                        <h3 className="text-[10px] font-bold uppercase tracking-wider text-text">
+                                        <h3 className="min-w-0 text-[10px] font-bold uppercase leading-4 tracking-wider text-text">
                                             Overall Progress
                                         </h3>
 
-                                        <span className="text-xl font-black text-primary">
+                                        <span className="shrink-0 text-xl font-black leading-none text-primary">
                                             {
                                                 overallProgress
                                             }
@@ -1495,16 +2515,18 @@ const CandidateApplicationDetail = () => {
                                             Current Stage
                                         </p>
 
-                                        <p className="mt-2 flex items-center gap-2 text-xs font-bold text-text">
+                                        <p className="mt-2 flex items-start gap-2 text-xs font-bold leading-5 text-text">
 
                                             <CheckCircle2
                                                 size={15}
-                                                className="text-primary"
+                                                className="mt-0.5 shrink-0 text-primary"
                                             />
 
-                                            {isRejected
-                                                ? "Application Rejected"
-                                                : currentStage?.label}
+                                            <span>
+                                                {isRejected
+                                                    ? "Application Rejected"
+                                                    : currentStage?.label}
+                                            </span>
 
                                         </p>
 
@@ -1523,26 +2545,29 @@ const CandidateApplicationDetail = () => {
                                             Recent Alerts
                                         </h3>
 
-                                        <span className="h-2 w-2 rounded-full bg-primary" />
+                                        <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
 
                                     </div>
 
 
                                     <div className="divide-y divide-border">
 
-
                                         <div className="p-4">
 
-                                            <p className="text-xs font-medium text-text">
+                                            <p className="text-xs font-medium leading-5 text-text">
+
                                                 Application submitted successfully
+
                                             </p>
 
-                                            <p className="mt-1 text-[10px] text-text-secondary">
+                                            <p className="mt-1 text-[10px] leading-4 text-text-secondary">
+
                                                 {
                                                     formatDateTime(
                                                         application.applied_at
                                                     )
                                                 }
+
                                             </p>
 
                                         </div>
@@ -1550,7 +2575,7 @@ const CandidateApplicationDetail = () => {
 
                                         <div className="p-4">
 
-                                            <p className="text-xs text-text-secondary">
+                                            <p className="text-xs leading-5 text-text-secondary">
 
                                                 Current status:{" "}
 
@@ -1565,7 +2590,7 @@ const CandidateApplicationDetail = () => {
 
                                             </p>
 
-                                            <p className="mt-1 text-[10px] text-text-secondary">
+                                            <p className="mt-1 text-[10px] leading-4 text-text-secondary">
 
                                                 Last updated{" "}
 

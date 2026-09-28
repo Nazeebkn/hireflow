@@ -16,6 +16,7 @@ import {
   applyForJob,
   getCandidateApplications,
 } from "../../../services/candidate/candidateJobApplicationService";
+
 function CandidateJobPreview({ job }) {
   const navigate = useNavigate();
 
@@ -216,19 +217,36 @@ function CandidateJobPreview({ job }) {
           <div className="flex gap-3 sm:gap-4">
 
             {/* Company Logo */}
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background p-2 sm:h-14 sm:w-14">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background p-1.5 sm:h-14 sm:w-14">
               {job.company_logo ? (
                 <img
                   src={job.company_logo}
-                  alt={job.company_name || "Company"}
-                  className="h-full w-full object-contain"
+                  alt={`${job.company_name || "Company"} logo`}
+                  className="h-full w-full rounded-lg object-contain"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+
+                    const fallback =
+                      event.currentTarget.nextElementSibling;
+
+                    if (fallback) {
+                      fallback.style.display = "flex";
+                    }
+                  }}
                 />
-              ) : (
+              ) : null}
+
+              {/* Default Icon */}
+              <div
+                className={`h-full w-full items-center justify-center ${
+                  job.company_logo ? "hidden" : "flex"
+                }`}
+              >
                 <Building2
                   size={22}
                   className="text-primary sm:h-6 sm:w-6"
                 />
-              )}
+              </div>
             </div>
 
             {/* Job Info */}
@@ -504,20 +522,36 @@ function CandidateJobPreview({ job }) {
 
               <div className="flex items-center gap-3">
 
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-2">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-1.5">
 
                   {job.company_logo ? (
                     <img
                       src={job.company_logo}
-                      alt={job.company_name || "Company"}
-                      className="h-full w-full object-contain"
+                      alt={`${job.company_name || "Company"} logo`}
+                      className="h-full w-full rounded-md object-contain"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+
+                        const fallback =
+                          event.currentTarget.nextElementSibling;
+
+                        if (fallback) {
+                          fallback.style.display = "flex";
+                        }
+                      }}
                     />
-                  ) : (
+                  ) : null}
+
+                  <div
+                    className={`h-full w-full items-center justify-center ${
+                      job.company_logo ? "hidden" : "flex"
+                    }`}
+                  >
                     <Building2
                       size={21}
                       className="text-primary"
                     />
-                  )}
+                  </div>
 
                 </div>
 
@@ -627,20 +661,36 @@ function CandidateJobPreview({ job }) {
 
               <div className="flex items-center gap-3">
 
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-2">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-1.5">
 
                   {job.company_logo ? (
                     <img
                       src={job.company_logo}
-                      alt={job.company_name || "Company"}
-                      className="h-full w-full object-contain"
+                      alt={`${job.company_name || "Company"} logo`}
+                      className="h-full w-full rounded-md object-contain"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+
+                        const fallback =
+                          event.currentTarget.nextElementSibling;
+
+                        if (fallback) {
+                          fallback.style.display = "flex";
+                        }
+                      }}
                     />
-                  ) : (
+                  ) : null}
+
+                  <div
+                    className={`h-full w-full items-center justify-center ${
+                      job.company_logo ? "hidden" : "flex"
+                    }`}
+                  >
                     <Building2
                       size={21}
                       className="text-primary"
                     />
-                  )}
+                  </div>
 
                 </div>
 

@@ -70,7 +70,6 @@ function CandidateApplicationCard({
         </div>
       </td>
 
-
       {/* COMPANY */}
 
       <td className="px-4 py-4 sm:px-5">
@@ -88,7 +87,6 @@ function CandidateApplicationCard({
         </div>
       </td>
 
-
       {/* LOCATION */}
 
       <td className="px-4 py-4 sm:px-5">
@@ -105,7 +103,6 @@ function CandidateApplicationCard({
 
         </div>
       </td>
-
 
       {/* APPLIED DATE */}
 
@@ -131,7 +128,6 @@ function CandidateApplicationCard({
         )}
 
       </td>
-
 
       {/* STATUS */}
 
@@ -179,16 +175,16 @@ function getStatusStyles(status) {
         badge: "bg-violet-100 text-violet-700",
       };
 
+    case "SHORTLISTED":
+      return {
+        icon: "bg-cyan-100 text-cyan-600",
+        badge: "bg-cyan-100 text-cyan-700",
+      };
+
     case "AI_INTERVIEW":
       return {
         icon: "bg-indigo-100 text-indigo-600",
         badge: "bg-indigo-100 text-indigo-700",
-      };
-
-    case "CLASSIFIED":
-      return {
-        icon: "bg-cyan-100 text-cyan-600",
-        badge: "bg-cyan-100 text-cyan-700",
       };
 
     case "SELECTED":

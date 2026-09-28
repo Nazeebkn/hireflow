@@ -10,10 +10,7 @@ class CandidateJobSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    company_logo = serializers.CharField(
-        source="company.company_logo",
-        read_only=True
-    )
+    company_logo = serializers.SerializerMethodField()
 
     class Meta:
         model = Job
@@ -38,3 +35,9 @@ class CandidateJobSerializer(serializers.ModelSerializer):
         )
 
         read_only_fields = fields
+
+    def get_company_logo(self, obj):
+        if obj.company and obj.company.company_logo:
+            return obj.company.company_logo.url
+
+        return None

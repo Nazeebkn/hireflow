@@ -1,3 +1,4 @@
+from celery import shared_task
 from company_app.models import AIInterview
 
 from candidate_app.services.ai.ai_interview_service import (
@@ -5,6 +6,7 @@ from candidate_app.services.ai.ai_interview_service import (
 )
 
 
+@shared_task
 def generate_ai_interview_questions(interview_id):
 
     try:

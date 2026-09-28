@@ -21,19 +21,32 @@ class Company(models.Model):
 
     company_size = models.CharField(max_length=50)
 
-    website = models.URLField(blank=True, null=True)
+    website = models.URLField(
+        blank=True,
+        null=True
+    )
 
     description = models.TextField()
 
-    contact_person = models.CharField(max_length=255)
+    contact_person = models.CharField(
+        max_length=255
+    )
 
-    contact_phone = models.CharField(max_length=20)
+    contact_phone = models.CharField(
+        max_length=20
+    )
 
-    country = models.CharField(max_length=100)
+    country = models.CharField(
+        max_length=100
+    )
 
-    state = models.CharField(max_length=100)
+    state = models.CharField(
+        max_length=100
+    )
 
-    city = models.CharField(max_length=100)
+    city = models.CharField(
+        max_length=100
+    )
 
     address = models.TextField()
 
@@ -58,15 +71,17 @@ class Company(models.Model):
         null=True
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
 
     def __str__(self):
         return self.company_name
-    
-    
-    
+
 
 class Job(models.Model):
 
@@ -149,9 +164,9 @@ class Job(models.Model):
     )
 
     status = models.CharField(
-    max_length=20,
-    choices=JobStatus.choices,
-    default=JobStatus.DRAFT
+        max_length=20,
+        choices=JobStatus.choices,
+        default=JobStatus.DRAFT
     )
 
     published_at = models.DateTimeField(
@@ -174,16 +189,15 @@ class Job(models.Model):
 
     def __str__(self):
         return self.title
-    
-    
-    
+
+
 class JobApplication(models.Model):
 
     class ApplicationStatus(models.TextChoices):
         APPLIED = "APPLIED", "Applied"
         RESUME_SCREENING = "RESUME_SCREENING", "Resume Screening"
+        SHORTLISTED = "SHORTLISTED", "Shortlisted"
         AI_INTERVIEW = "AI_INTERVIEW", "AI Interview"
-        CLASSIFIED = "CLASSIFIED", "Classified"
         SELECTED = "SELECTED", "Selected"
         FINAL_INTERVIEW = "FINAL_INTERVIEW", "Final Interview"
         HIRED = "HIRED", "Hired"
@@ -211,9 +225,110 @@ class JobApplication(models.Model):
         default=ApplicationStatus.APPLIED,
     )
 
-    applied_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    applied_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
 
     class Meta:
         unique_together = ("candidate", "job")
         ordering = ["-applied_at"]
+
+    def __str__(self):
+        return f"{self.candidate} - {self.job}"
+
+
+class AIResumeScreening(models.Model):
+
+    application = models.OneToOneField(
+        JobApplication,
+        on_delete=models.CASCADE,
+        related_name="resume_screening"
+    )
+
+    overall_score = models.PositiveIntegerField()
+
+    skills_score = models.PositiveIntegerField()
+
+    experience_score = models.PositiveIntegerField()
+
+    education_score = models.PositiveIntegerField()
+
+    recommendation = models.CharField(
+        max_length=30
+    )
+
+    summary = models.TextField()
+
+    strengths = models.JSONField(
+        default=list
+    )
+
+    gaps = models.JSONField(
+        default=list
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    def __str__(self):
+        return (
+            f"Resume Screening - "
+            f"Application {self.application.id}"
+        )
+        
+        
+        
+        
+
+class AIInterview(models.Model):
+
+    class InterviewStatus(models.TextChoices):
+        SCHEDULED = "SCHEDULED", "Scheduled"
+        IN_PROGRESS = "IN_PROGRESS", "In Progress"
+        COMPLETED = "COMPLETED", "Completed"
+        MISSED = "MISSED", "Missed"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    application = models.OneToOneField(
+        JobApplication,
+        on_delete=models.CASCADE,
+        related_name="ai_interview",
+    )
+
+    scheduled_at = models.DateTimeField()
+
+    duration = models.PositiveIntegerField(
+        help_text="Interview duration in minutes"
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=InterviewStatus.choices,
+        default=InterviewStatus.SCHEDULED,
+    )
+
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"AI Interview - Application {self.application_id}"

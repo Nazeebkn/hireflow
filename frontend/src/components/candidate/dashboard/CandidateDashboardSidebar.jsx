@@ -3,9 +3,7 @@ import {
   LayoutDashboard,
   Search,
   FileText,
-  UserRound,
   Settings,
-  Upload,
   LogOut,
   X,
   Loader2,
@@ -34,22 +32,16 @@ function CandidateDashboardSidebar() {
       path: "/candidate/applications",
       icon: FileText,
     },
-    {
-      label: "Profile",
-      path: "/candidate/profile",
-      icon: UserRound,
-    },
-    {
-      label: "Settings",
-      path: "/candidate/settings",
-      icon: Settings,
-    },
   ];
 
   const currentPath = window.location.pathname;
 
   const handleNavigation = (path) => {
     window.location.href = path;
+  };
+
+  const handleSettingsClick = () => {
+    window.location.href = "/candidate/settings";
   };
 
   const handleLogoutClick = () => {
@@ -101,7 +93,9 @@ function CandidateDashboardSidebar() {
                 <button
                   key={item.path}
                   type="button"
-                  onClick={() => handleNavigation(item.path)}
+                  onClick={() =>
+                    handleNavigation(item.path)
+                  }
                   className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition ${
                     isActive
                       ? "bg-primary text-white"
@@ -110,7 +104,9 @@ function CandidateDashboardSidebar() {
                 >
                   <Icon
                     size={19}
-                    strokeWidth={isActive ? 2.2 : 1.8}
+                    strokeWidth={
+                      isActive ? 2.2 : 1.8
+                    }
                   />
 
                   <span>{item.label}</span>
@@ -124,21 +120,29 @@ function CandidateDashboardSidebar() {
         {/* Bottom Actions */}
         <div className="space-y-2 border-t border-border p-4">
 
-          {/* Upload Resume */}
-          {/*
+          {/* Settings */}
           <button
             type="button"
-            onClick={() =>
-              (window.location.href = "/candidate/profile-completion")
-            }
-            className="flex w-full items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
+            onClick={handleSettingsClick}
+            className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition ${
+              currentPath === "/candidate/settings"
+                ? "bg-primary text-white"
+                : "text-text-secondary hover:bg-background hover:text-text"
+            }`}
           >
-            <Upload size={18} />
-            <span>Upload Resume</span>
-          </button>
-          */}
+            <Settings
+              size={18}
+              strokeWidth={
+                currentPath === "/candidate/settings"
+                  ? 2.2
+                  : 1.8
+              }
+            />
 
-          {/* Logout Button */}
+            <span>Settings</span>
+          </button>
+
+          {/* Logout */}
           <button
             type="button"
             onClick={handleLogoutClick}
@@ -193,8 +197,8 @@ function CandidateDashboardSidebar() {
             {!isLoggingOut ? (
               <>
                 <p className="mt-5 text-sm leading-6 text-text-secondary">
-                  Are you sure you want to logout from your HireFlow
-                  candidate account?
+                  Are you sure you want to logout from
+                  your HireFlow candidate account?
                 </p>
 
                 {/* Modal Actions */}

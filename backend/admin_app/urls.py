@@ -28,6 +28,8 @@ from admin_app.views.admin.candidate_applications_view import (
     CandidateApplicationsAPIView,
 )
 
+from .views.admin.active_jobs_views import ActiveJobsCountAPIView
+
 urlpatterns = [
     path(
     "companies/pending/",
@@ -81,5 +83,11 @@ urlpatterns = [
     "candidates/<int:candidate_id>/applications/",
     CandidateApplicationsAPIView.as_view(),
     name="candidate-applications",
-),
+    ),
+    
+    path(
+    "jobs/active/count/",
+    ActiveJobsCountAPIView.as_view(),
+    name="active-jobs-count",
+    ),
 ]

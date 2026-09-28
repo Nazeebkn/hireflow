@@ -13,12 +13,12 @@ function ApplicationFilters({
       label: "Resume Screening",
     },
     {
-      value: "AI_INTERVIEW",
-      label: "AI Interview",
+      value: "SHORTLISTED",
+      label: "Shortlisted",
     },
     {
-      value: "CLASSIFIED",
-      label: "Shortlisted",
+      value: "AI_INTERVIEW",
+      label: "AI Interview",
     },
     {
       value: "FINAL_INTERVIEW",
@@ -36,6 +36,7 @@ function ApplicationFilters({
   return (
     <div className="flex w-full items-center gap-3">
       {/* Filter Icon */}
+
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-12 sm:w-12">
         <Filter
           size={19}
@@ -44,6 +45,7 @@ function ApplicationFilters({
       </div>
 
       {/* Select */}
+
       <div className="min-w-0 flex-1">
         <label
           htmlFor="application-status-filter"

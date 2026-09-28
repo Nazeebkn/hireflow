@@ -171,7 +171,6 @@ function CandidateApplications({
 
         </div>
 
-
         {/* STATUS FILTER */}
 
         <div className="flex h-10 items-center gap-2 rounded-xl border border-border bg-slate-50 px-3">
@@ -202,12 +201,12 @@ function CandidateApplications({
               Resume Screening
             </option>
 
-            <option value="AI_INTERVIEW">
-              AI Interview
+            <option value="SHORTLISTED">
+              Shortlisted
             </option>
 
-            <option value="CLASSIFIED">
-              Classified
+            <option value="AI_INTERVIEW">
+              AI Interview
             </option>
 
             <option value="SELECTED">
@@ -230,7 +229,6 @@ function CandidateApplications({
         </div>
 
       </div>
-
 
       {/* =====================================================
           APPLICATION HEADER
@@ -262,13 +260,11 @@ function CandidateApplications({
 
         </div>
 
-
         <p className="text-xs font-medium text-text-secondary">
           Page {currentPage} of {totalPages}
         </p>
 
       </div>
-
 
       {/* =====================================================
           SINGLE TABLE CONTAINER
@@ -306,7 +302,6 @@ function CandidateApplications({
 
           </div>
 
-
           {/* =================================================
               PAGINATION
           ================================================= */}
@@ -337,7 +332,6 @@ function CandidateApplications({
 
             </p>
 
-
             {/* PAGINATION */}
 
             <div className="flex items-center justify-center gap-1.5">
@@ -358,7 +352,6 @@ function CandidateApplications({
                 </span>
 
               </button>
-
 
               {/* PAGE NUMBERS */}
 
@@ -382,7 +375,6 @@ function CandidateApplications({
                 ))}
 
               </div>
-
 
               {/* NEXT */}
 

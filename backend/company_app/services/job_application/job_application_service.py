@@ -1,3 +1,5 @@
+import threading
+
 from rest_framework.exceptions import NotFound, ValidationError
 
 from company_app.repositories.job_application.job_application_repository import (
@@ -5,24 +7,23 @@ from company_app.repositories.job_application.job_application_repository import 
 )
 
 
+
+
 class JobApplicationService:
 
     @staticmethod
     def apply_for_job(candidate, job_id):
 
-        # Check candidate profile
         if not candidate:
             raise NotFound(
                 "Candidate profile not found."
             )
 
-        # Check candidate resume
         if not candidate.resume:
             raise ValidationError(
                 "Please upload your resume before applying for a job."
             )
 
-        # Get published job
         job = JobApplicationRepository.get_published_job(
             job_id
         )
@@ -32,7 +33,6 @@ class JobApplicationService:
                 "Job not found or is not currently published."
             )
 
-        # Check duplicate application
         existing_application = (
             JobApplicationRepository.get_application(
                 candidate,
@@ -45,12 +45,30 @@ class JobApplicationService:
                 "You have already applied for this job."
             )
 
-        # Create application with submitted resume
-        return JobApplicationRepository.create_application(
-            candidate=candidate,
-            job=job,
-            submitted_resume=candidate.resume,
+        application = (
+            JobApplicationRepository.create_application(
+                candidate=candidate,
+                job=job,
+                submitted_resume=candidate.resume,
+            )
         )
+
+        application.status = (
+            application.ApplicationStatus.RESUME_SCREENING
+        )
+
+        application.save(
+            update_fields=["status", "updated_at"]
+        )
+
+        # Start AI resume screening in background
+        threading.Thread(
+            target=run_resume_screening,
+            args=(application.id,),
+            daemon=True,
+        ).start()
+
+        return application
 
     @staticmethod
     def get_candidate_applications(candidate):
@@ -67,7 +85,10 @@ class JobApplicationService:
         )
 
     @staticmethod
-    def get_application(candidate, application_id):
+    def get_application(
+        candidate,
+        application_id,
+    ):
 
         if not candidate:
             raise NotFound(
@@ -92,14 +113,16 @@ class JobApplicationService:
             )
 
         return application
-    
-    
-        # =====================================================
+
+    # =====================================================
     # COMPANY - GET JOB APPLICATIONS
     # =====================================================
 
     @staticmethod
-    def get_job_applications(company, job_id):
+    def get_job_applications(
+        company,
+        job_id,
+    ):
 
         if not company:
             raise NotFound(
@@ -128,3 +151,28 @@ class JobApplicationService:
         )
 
         return job, applications
+
+    @staticmethod
+    def get_application_for_company(
+        company,
+        application_id,
+    ):
+
+        if not company:
+            raise NotFound(
+                "Company profile not found."
+            )
+
+        application = (
+            JobApplicationRepository.get_application_by_id_for_company(
+                company,
+                application_id,
+            )
+        )
+
+        if not application:
+            raise NotFound(
+                "Application not found or you do not have access to this application."
+            )
+
+        return application

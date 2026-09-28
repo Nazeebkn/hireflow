@@ -8,7 +8,9 @@ import Jobs from "../pages/company/Jobs";
 import JobDetails from "../pages/company/JobDetails";
 import JobEdit from "../pages/company/JobEdit";
 import CompanyApplications from "../pages/company/CompanyApplications";
+import CompanyApplicationDetail from "../pages/company/CompanyApplicationDetail";
 import JobCandidates from "../pages/company/JobCandidates";
+import CompanySettings from "../pages/company/Settings/CompanySettings";
 
 function CompanyRoutes() {
   return (
@@ -43,22 +45,30 @@ function CompanyRoutes() {
         element={<JobDetails />}
       />
 
-
       <Route
         path="/company/jobs/:id/edit"
         element={<JobEdit />}
       />
 
-    <Route
-      path="/company/applications"
-      element={<CompanyApplications />}
-    />
+      <Route
+        path="/company/applications"
+        element={<CompanyApplications />}
+      />
 
-    <Route
-      path="/company/jobs/:jobId/candidates"
-      element={<JobCandidates />}
-    />
+      <Route
+        path="/company/applications/:applicationId"
+        element={<CompanyApplicationDetail />}
+      />
 
+      <Route
+        path="/company/jobs/:jobId/candidates"
+        element={<JobCandidates />}
+      />
+
+      <Route
+        path="/company/settings"
+        element={<CompanySettings />}
+      />
     </>
   );
 }

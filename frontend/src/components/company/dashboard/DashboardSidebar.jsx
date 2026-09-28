@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   BriefcaseBusiness,
   Users,
-  Building2,
+  Settings,
   LogOut,
   X,
   Loader2,
@@ -25,14 +25,9 @@ const sidebarItems = [
     path: "/company/jobs",
   },
   {
-    label: "Applications  ",
+    label: "Applications",
     icon: Users,
     path: "/company/applications",
-  },
-  {
-    label: "Company Profile",
-    icon: Building2,
-    path: "/company/profile",
   },
 ];
 
@@ -103,8 +98,30 @@ function DashboardSidebar({ onNavigate }) {
 
         </nav>
 
-        {/* Logout */}
-        <div className="border-t border-border p-4">
+        {/* Settings & Logout */}
+        <div className="space-y-2 border-t border-border p-4">
+
+          {/* Settings */}
+      {/* Settings */}
+<NavLink
+  to="/company/settings"
+  onClick={onNavigate}
+  className={({ isActive }) =>
+    `flex items-center gap-3 rounded-xl px-4 py-3 transition ${
+      isActive
+        ? "bg-primary text-white"
+        : "text-text-secondary hover:bg-background"
+    }`
+  }
+>
+            <Settings size={20} />
+
+            <span className="font-medium">
+              Settings
+            </span>
+          </NavLink>
+
+          {/* Logout */}
           <button
             type="button"
             onClick={handleLogoutClick}
@@ -116,6 +133,7 @@ function DashboardSidebar({ onNavigate }) {
               Logout
             </span>
           </button>
+
         </div>
 
       </aside>

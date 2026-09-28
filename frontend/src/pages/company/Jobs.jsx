@@ -10,7 +10,6 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   Pencil,
-  Upload,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +19,8 @@ import {
   publishJob,
   closeJob,
 } from "../../services/company/jobService";
+
+import { getCompanyProfile } from "../../services/company/companyService";
 
 import CompanyDashboardLayout from "../../components/company/dashboard/CompanyDashboardLayout";
 import JobStatsCards from "../../components/company/jobs/JobStatsCards";
@@ -31,9 +32,11 @@ import JobsEmptyState from "../../components/company/jobs/JobsEmptyState";
 const JOBS_PER_PAGE = 5;
 
 function Jobs() {
-
   const navigate = useNavigate();
+
   const [jobs, setJobs] = useState([]);
+  const [companyProfile, setCompanyProfile] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -74,8 +77,22 @@ function Jobs() {
     }
   };
 
+  const fetchCompanyProfile = async () => {
+    try {
+      const profile = await getCompanyProfile();
+
+      setCompanyProfile(profile);
+    } catch (profileError) {
+      console.error(
+        "Unable to load company profile:",
+        profileError
+      );
+    }
+  };
+
   useEffect(() => {
     fetchJobs();
+    fetchCompanyProfile();
   }, []);
 
   const handleCreateJobClick = () => {
@@ -89,7 +106,7 @@ function Jobs() {
   };
 
   const handleViewJob = (job) => {
-  navigate(`/company/jobs/${job.id}`);
+    navigate(`/company/jobs/${job.id}`);
   };
 
   const handleFormModalClose = () => {
@@ -211,8 +228,6 @@ function Jobs() {
 
   /*
    * Recent Job Activity
-   *
-   * Uses the latest jobs based on updated_at / created_at.
    */
   const recentJobs = [...jobs]
     .sort((a, b) => {
@@ -286,7 +301,11 @@ function Jobs() {
   };
 
   return (
-    <CompanyDashboardLayout>
+    <CompanyDashboardLayout
+      title="Jobs"
+      subtitle="Create, publish, and manage your company's job postings."
+      companyProfile={companyProfile}
+    >
       <div className="space-y-5">
 
         {/* Page Header */}
@@ -365,18 +384,20 @@ function Jobs() {
                   <option value="ALL">
                     All Statuses
                   </option>
+
                   <option value="DRAFT">
                     Draft
                   </option>
+
                   <option value="PUBLISHED">
                     Published
                   </option>
+
                   <option value="CLOSED">
                     Closed
                   </option>
                 </select>
               </div>
-
             </div>
 
             {/* Filter Result Info */}
@@ -488,9 +509,9 @@ function Jobs() {
                 {/* Job Postings */}
                 <div className="min-w-0">
                   <JobTable
-  jobs={paginatedJobs}
-  onView={handleViewJob}
-/>
+                    jobs={paginatedJobs}
+                    onView={handleViewJob}
+                  />
 
                   {/* Pagination */}
                   {totalPages > 1 && (
@@ -724,4 +745,4 @@ function Jobs() {
   );
 }
 
-export default Jobs; 
+export default Jobs;

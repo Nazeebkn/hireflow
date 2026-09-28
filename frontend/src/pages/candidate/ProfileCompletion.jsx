@@ -533,6 +533,8 @@ function ProfileCompletion() {
         formData.expected_salary
           ? Number(formData.expected_salary)
           : null,
+
+      
     };
 
     console.log("STEP 2 PAYLOAD:", payload);

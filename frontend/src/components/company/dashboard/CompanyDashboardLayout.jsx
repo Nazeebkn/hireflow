@@ -1,9 +1,29 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import DashboardSidebar from "./DashboardSidebar";
 
-function CompanyDashboardLayout({ children, companyProfile }) {
+function CompanyDashboardLayout({
+  children,
+  companyProfile,
+  title = "Dashboard",
+  subtitle = "Manage your recruitment activities",
+}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSettingsClick = () => {
+    setIsAccountMenuOpen(false);
+    navigate("/company/settings");
+  };
+
+  const handleLogoutClick = () => {
+    setIsAccountMenuOpen(false);
+
+    // Keep your existing logout logic/modal here
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -15,9 +35,13 @@ function CompanyDashboardLayout({ children, companyProfile }) {
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:hidden">
         <div>
-          <h1 className="text-xl font-bold text-primary">HireFlow</h1>
+          <h1 className="text-xl font-bold text-primary">
+            HireFlow
+          </h1>
 
-          <p className="text-xs text-text-secondary">Company Portal</p>
+          <p className="text-xs text-text-secondary">
+            Company Portal
+          </p>
         </div>
 
         <button
@@ -60,7 +84,9 @@ function CompanyDashboardLayout({ children, companyProfile }) {
               {/* Mobile Brand */}
               <div className="flex items-center justify-between border-b border-border p-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-primary">HireFlow</h1>
+                  <h1 className="text-2xl font-bold text-primary">
+                    HireFlow
+                  </h1>
 
                   <p className="mt-1 text-sm text-text-secondary">
                     Company Portal
@@ -106,13 +132,14 @@ function CompanyDashboardLayout({ children, companyProfile }) {
       <main className="min-h-screen lg:ml-72">
         {/* Desktop Top Header */}
         <header className="sticky top-0 z-40 hidden h-[92px] items-center justify-between border-b border-border bg-surface px-8 lg:flex">
+          {/* Page Title */}
           <div>
             <h2 className="text-lg font-semibold text-text">
-              Company Dashboard
+              {title}
             </h2>
 
             <p className="mt-1 text-sm text-text-secondary">
-              Manage your recruitment activities
+              {subtitle}
             </p>
           </div>
 
@@ -143,46 +170,88 @@ function CompanyDashboardLayout({ children, companyProfile }) {
             </button>
 
             {/* Company Account */}
-            <button
-              type="button"
-              className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2 transition hover:bg-background"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-                {(companyProfile?.company_name || "Company")
-                  .trim()
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-
-              <div className="text-left">
-                <p className="text-sm font-semibold text-text">
-                  {companyProfile?.company_name || "Company"}
-                </p>
-
-                <p className="text-xs text-text-secondary">Company Account</p>
-              </div>
-
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                className="h-4 w-4 text-text-secondary"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setIsAccountMenuOpen((previous) => !previous)
+                }
+                className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2 transition hover:bg-background"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 9l6 6 6-6"
-                />
-              </svg>
-            </button>
+                {/* Company Logo */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
+                  {companyProfile?.company_logo ? (
+                    <img
+                      src={companyProfile.company_logo}
+                      alt="Company logo"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-background" />
+                  )}
+                </div>
+
+                {/* Company Name */}
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-text">
+                    {companyProfile?.company_name || "Company"}
+                  </p>
+
+                  <p className="text-xs text-text-secondary">
+                    Company Account
+                  </p>
+                </div>
+
+                {/* Dropdown Icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  className={`h-4 w-4 text-text-secondary transition-transform ${
+                    isAccountMenuOpen ? "rotate-180" : ""
+                  }`}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 9l6 6 6-6"
+                  />
+                </svg>
+              </button>
+
+              {/* Account Dropdown */}
+              {isAccountMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-3 w-64 overflow-hidden rounded-2xl border border-border bg-surface p-2 shadow-xl">
+                  {/* Settings */}
+                  <button
+                    type="button"
+                    onClick={handleSettingsClick}
+                    className="flex w-full items-center rounded-xl px-3 py-3 text-left text-sm font-medium text-text transition hover:bg-background"
+                  >
+                    Settings
+                  </button>
+
+                  {/* Logout */}
+                  <button
+                    type="button"
+                    onClick={handleLogoutClick}
+                    className="flex w-full items-center rounded-xl px-3 py-3 text-left text-sm font-medium text-error transition hover:bg-error/10"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Page Content */}
         <section className="px-5 py-7 sm:px-8 sm:py-8">
-          <div className="mx-auto w-full max-w-[1500px]">{children}</div>
+          <div className="mx-auto w-full max-w-[1500px]">
+            {children}
+          </div>
         </section>
       </main>
     </div>

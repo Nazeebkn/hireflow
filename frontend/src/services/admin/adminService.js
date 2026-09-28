@@ -132,3 +132,8 @@ export const getCandidateApplications = async (candidateId) => {
 
   return response.data;
 };
+
+export const getActiveJobsCount = async () => {
+  const response = await api.get("/admin/jobs/active/count/");
+  return response.data;
+};

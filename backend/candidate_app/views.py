@@ -63,8 +63,12 @@ class CandidateProfileAPIView(APIView):
     
     def put(self, request):
 
+        profile = CandidateProfileService.get_profile(request.user)
+
         serializer = CandidateProfileSerializer(
-            data=request.data
+            profile,
+            data=request.data,
+            partial=True,
         )
 
         serializer.is_valid(raise_exception=True)

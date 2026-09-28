@@ -23,7 +23,6 @@ import {
   getCandidateApplications,
 } from "../../services/candidate/candidateJobApplicationService";
 
-
 const CandidateJobDetails = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -40,7 +39,6 @@ const CandidateJobDetails = () => {
 
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
   const [showApplySuccess, setShowApplySuccess] = useState(false);
-
 
   // Recruitment pipeline stages
 
@@ -64,16 +62,16 @@ const CandidateJobDetails = () => {
         "AI reviews the candidate's resume against the job requirements.",
     },
     {
+      key: "SHORTLISTED",
+      title: "Shortlisted",
+      description:
+        "Candidates who meet the resume screening criteria are shortlisted for the AI interview.",
+    },
+    {
       key: "AI_INTERVIEW",
       title: "AI Interview",
       description:
-        "Candidate completes the AI-powered screening interview.",
-    },
-    {
-      key: "CLASSIFIED",
-      title: "Candidate Classification",
-      description:
-        "Candidate is classified based on resume and interview results.",
+        "Shortlisted candidates complete the AI-powered screening interview.",
     },
     {
       key: "SELECTED",
@@ -95,47 +93,45 @@ const CandidateJobDetails = () => {
     },
   ];
 
-
   // Fetch job details
 
-useEffect(() => {
-  const fetchJobDetails = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  useEffect(() => {
+    const fetchJobDetails = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      const [jobData, applicationsData] = await Promise.all([
-        getCandidateJobById(jobId),
-        getCandidateApplications(),
-      ]);
+        const [jobData, applicationsData] = await Promise.all([
+          getCandidateJobById(jobId),
+          getCandidateApplications(),
+        ]);
 
-      setJob(jobData);
+        setJob(jobData);
 
-      const applications = Array.isArray(applicationsData)
-        ? applicationsData
-        : applicationsData?.results || [];
+        const applications = Array.isArray(applicationsData)
+          ? applicationsData
+          : applicationsData?.results || [];
 
-      const alreadyApplied = applications.some(
-        (application) =>
-          Number(application.job) === Number(jobId)
-      );
+        const alreadyApplied = applications.some(
+          (application) =>
+            Number(application.job) === Number(jobId)
+        );
 
-      setApplied(alreadyApplied);
-    } catch (error) {
-      console.error(
-        "Failed to load job details:",
-        error?.response?.data || error
-      );
+        setApplied(alreadyApplied);
+      } catch (error) {
+        console.error(
+          "Failed to load job details:",
+          error?.response?.data || error
+        );
 
-      setError("Failed to load job details.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setError("Failed to load job details.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchJobDetails();
-}, [jobId]);
-
+    fetchJobDetails();
+  }, [jobId]);
 
   // Open apply confirmation modal
 
@@ -148,7 +144,6 @@ useEffect(() => {
     setApplySuccess("");
     setShowApplyConfirm(true);
   };
-
 
   // Confirm application
 
@@ -172,7 +167,6 @@ useEffect(() => {
 
       setShowApplyConfirm(false);
       setShowApplySuccess(true);
-
     } catch (error) {
       console.log(
         "Apply Error:",
@@ -188,12 +182,10 @@ useEffect(() => {
         "Failed to submit your application.";
 
       setApplyError(message);
-
     } finally {
       setApplying(false);
     }
   };
-
 
   // Cancel application confirmation
 
@@ -206,7 +198,6 @@ useEffect(() => {
     setApplyError("");
   };
 
-
   // Format employment type
 
   const formatEmploymentType = (type) => {
@@ -218,7 +209,6 @@ useEffect(() => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-
   // Format work mode
 
   const formatWorkMode = (mode) => {
@@ -228,7 +218,6 @@ useEffect(() => {
 
     return "Not specified";
   };
-
 
   // Format salary
 
@@ -248,7 +237,6 @@ useEffect(() => {
     return `${minimum} - ${maximum}`;
   };
 
-
   // Convert skills into array
 
   const skills = job?.skills
@@ -257,7 +245,6 @@ useEffect(() => {
         .map((skill) => skill.trim())
         .filter(Boolean)
     : [];
-
 
   // Format deadline
 
@@ -275,13 +262,11 @@ useEffect(() => {
     });
   };
 
-
   // Loading
 
   if (loading) {
     return (
       <div className="flex h-screen overflow-hidden bg-background">
-
         <div className="hidden shrink-0 lg:flex">
           <CandidateDashboardSidebar />
         </div>
@@ -291,26 +276,21 @@ useEffect(() => {
             Loading job details...
           </p>
         </main>
-
       </div>
     );
   }
-
 
   // Error
 
   if (error || !job) {
     return (
       <div className="flex h-screen overflow-hidden bg-background">
-
         <div className="hidden shrink-0 lg:flex">
           <CandidateDashboardSidebar />
         </div>
 
         <main className="flex min-w-0 flex-1 items-center justify-center px-4">
-
           <div className="text-center">
-
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface">
               <BriefcaseBusiness
                 size={24}
@@ -330,15 +310,11 @@ useEffect(() => {
               <ArrowLeft size={16} />
               Back to Jobs
             </button>
-
           </div>
-
         </main>
-
       </div>
     );
   }
-
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-background">
@@ -349,16 +325,13 @@ useEffect(() => {
         <CandidateDashboardSidebar />
       </div>
 
-
       {/* ================= MAIN ================= */}
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
-
         {/* ================= TOP BAR ================= */}
 
         <header className="shrink-0 border-b border-border bg-background">
-
           <div className="flex h-12 items-center justify-between gap-3 px-4 sm:px-6 lg:px-7">
 
             {/* Back */}
@@ -375,11 +348,9 @@ useEffect(() => {
               </span>
             </button>
 
-
             {/* Breadcrumb */}
 
             <div className="hidden min-w-0 flex-1 items-center gap-2 md:flex">
-
               <span className="text-text-secondary">
                 /
               </span>
@@ -387,27 +358,10 @@ useEffect(() => {
               <span className="truncate text-xs font-semibold text-text sm:text-sm">
                 {job.title}
               </span>
-
             </div>
 
-
-            {/* Save */}
-
-            <button
-              type="button"
-              className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text transition hover:border-primary hover:text-primary sm:px-4 sm:py-2 sm:text-sm"
-            >
-              <Bookmark size={15} />
-
-              <span className="hidden sm:inline">
-                Save Job
-              </span>
-            </button>
-
           </div>
-
         </header>
-
 
         {/* ================= SCROLL AREA ================= */}
 
@@ -415,13 +369,11 @@ useEffect(() => {
 
           <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-7">
 
-
             {/* ================= JOB HEADER ================= */}
 
             <section className="rounded-xl border border-border bg-surface px-4 py-4 shadow-sm sm:px-5 sm:py-5">
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
 
                 {/* Left */}
 
@@ -446,7 +398,6 @@ useEffect(() => {
 
                   </div>
 
-
                   {/* Info */}
 
                   <div className="min-w-0">
@@ -458,7 +409,6 @@ useEffect(() => {
                     <p className="mt-0.5 text-xs font-semibold text-primary sm:text-sm">
                       {job.company_name || "Company"}
                     </p>
-
 
                     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-text-secondary sm:text-xs">
 
@@ -482,7 +432,6 @@ useEffect(() => {
 
                 </div>
 
-
                 {/* Apply */}
 
                 <button
@@ -504,7 +453,6 @@ useEffect(() => {
 
               </div>
 
-
               {/* Meta */}
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -523,27 +471,25 @@ useEffect(() => {
 
               </div>
 
-
               {/* Apply Error */}
 
-              {applyError && !showApplyConfirm && !showApplySuccess && (
-                <p className="mt-3 text-xs font-medium text-red-500">
-                  {applyError}
-                </p>
-              )}
+              {applyError &&
+                !showApplyConfirm &&
+                !showApplySuccess && (
+                  <p className="mt-3 text-xs font-medium text-red-500">
+                    {applyError}
+                  </p>
+                )}
 
             </section>
-
 
             {/* ================= TWO COLUMN AREA ================= */}
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px]">
 
-
               {/* ================= MAIN DETAILS ================= */}
 
               <div className="min-w-0 rounded-xl border border-border bg-surface px-5 py-5 shadow-sm sm:px-6 sm:py-6">
-
 
                 {/* Job Overview */}
 
@@ -559,7 +505,6 @@ useEffect(() => {
                   </p>
 
                 </section>
-
 
                 {/* Role Context */}
 
@@ -578,7 +523,6 @@ useEffect(() => {
                   </p>
 
                 </section>
-
 
                 {/* Responsibilities */}
 
@@ -606,14 +550,12 @@ useEffect(() => {
                         <span>
                           {item}
                         </span>
-
                       </li>
                     ))}
 
                   </ul>
 
                 </section>
-
 
                 {/* Requirements */}
 
@@ -622,7 +564,6 @@ useEffect(() => {
                   <h2 className="text-base font-bold text-text sm:text-lg">
                     Requirements
                   </h2>
-
 
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
 
@@ -649,7 +590,6 @@ useEffect(() => {
                       </p>
 
                     </div>
-
 
                     {/* Education */}
 
@@ -679,7 +619,6 @@ useEffect(() => {
 
                 </section>
 
-
                 {/* Required Skills */}
 
                 <section className="mt-8">
@@ -708,7 +647,6 @@ useEffect(() => {
                   )}
 
                 </section>
-
 
                 {/* Benefits */}
 
@@ -747,7 +685,6 @@ useEffect(() => {
 
                 </section>
 
-
                 {/* About HireFlow */}
 
                 <section className="mt-8">
@@ -769,7 +706,6 @@ useEffect(() => {
 
                 </section>
 
-
                 {/* ================= RECRUITMENT PIPELINE ================= */}
 
                 <section className="mt-8">
@@ -790,7 +726,6 @@ useEffect(() => {
                     </p>
 
                   </div>
-
 
                   <div className="mt-4 rounded-xl border border-border bg-background p-4 sm:p-5">
 
@@ -833,7 +768,6 @@ useEffect(() => {
 
                                 </div>
 
-
                                 {!isLast && (
                                   <div
                                     className={`absolute left-1/2 top-7 h-full w-px -translate-x-1/2 ${
@@ -845,7 +779,6 @@ useEffect(() => {
                                 )}
 
                               </div>
-
 
                               {/* Stage Content */}
 
@@ -871,7 +804,6 @@ useEffect(() => {
 
                                 </div>
 
-
                                 <p className="mt-1 text-xs leading-5 text-text-secondary sm:text-sm">
                                   {stage.description}
                                 </p>
@@ -891,11 +823,9 @@ useEffect(() => {
 
               </div>
 
-
               {/* ================= RIGHT SIDE ================= */}
 
               <aside className="h-fit space-y-4 lg:sticky lg:top-4">
-
 
                 {/* Job Summary */}
 
@@ -908,7 +838,6 @@ useEffect(() => {
                   <p className="mt-1 text-xs font-semibold text-primary">
                     {job.company_name || "Company"}
                   </p>
-
 
                   {/* Salary */}
 
@@ -923,7 +852,6 @@ useEffect(() => {
                     </p>
 
                   </div>
-
 
                   {/* Summary Grid */}
 
@@ -946,7 +874,6 @@ useEffect(() => {
 
                     </div>
 
-
                     <div className="rounded-lg bg-background p-3">
 
                       <BriefcaseBusiness
@@ -963,7 +890,6 @@ useEffect(() => {
                       </p>
 
                     </div>
-
 
                     <div className="rounded-lg bg-background p-3">
 
@@ -983,7 +909,6 @@ useEffect(() => {
                       </p>
 
                     </div>
-
 
                     <div className="rounded-lg bg-background p-3">
 
@@ -1005,7 +930,6 @@ useEffect(() => {
                   </div>
 
                 </div>
-
 
                 {/* Apply Card */}
 
@@ -1037,16 +961,7 @@ useEffect(() => {
                       : "Apply Now"}
                   </button>
 
-                  <button
-                    type="button"
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary hover:text-primary"
-                  >
-                    <Bookmark size={15} />
-                    Save Job
-                  </button>
-
                 </div>
-
 
                 {/* Deadline Notice */}
 
@@ -1085,7 +1000,6 @@ useEffect(() => {
 
       </main>
 
-
       {/* ================= APPLY CONFIRMATION MODAL ================= */}
 
       {showApplyConfirm && (
@@ -1122,7 +1036,6 @@ useEffect(() => {
 
               </div>
 
-
               {/* Close */}
 
               <button
@@ -1135,7 +1048,6 @@ useEffect(() => {
               </button>
 
             </div>
-
 
             {/* Job Information */}
 
@@ -1162,7 +1074,6 @@ useEffect(() => {
 
                 </div>
 
-
                 {/* Job Info */}
 
                 <div className="min-w-0">
@@ -1179,7 +1090,6 @@ useEffect(() => {
 
               </div>
 
-
               {/* Confirmation Message */}
 
               <div className="mt-4 rounded-lg bg-surface p-3">
@@ -1193,7 +1103,6 @@ useEffect(() => {
 
             </div>
 
-
             {/* Apply Error */}
 
             {applyError && (
@@ -1205,7 +1114,6 @@ useEffect(() => {
 
               </div>
             )}
-
 
             {/* Modal Actions */}
 
@@ -1221,7 +1129,6 @@ useEffect(() => {
               >
                 Cancel
               </button>
-
 
               {/* Confirm Apply */}
 
@@ -1242,7 +1149,6 @@ useEffect(() => {
 
         </div>
       )}
-
 
       {/* ================= APPLY SUCCESS MODAL ================= */}
 
@@ -1280,7 +1186,6 @@ useEffect(() => {
 
               </div>
 
-
               {/* Close */}
 
               <button
@@ -1292,7 +1197,6 @@ useEffect(() => {
               </button>
 
             </div>
-
 
             {/* Job Details */}
 
@@ -1319,7 +1223,6 @@ useEffect(() => {
 
                 </div>
 
-
                 {/* Job Info */}
 
                 <div className="min-w-0">
@@ -1336,7 +1239,6 @@ useEffect(() => {
 
               </div>
 
-
               {/* Small Job Details */}
 
               <div className="mt-4 grid grid-cols-2 gap-2">
@@ -1352,7 +1254,6 @@ useEffect(() => {
                   </p>
 
                 </div>
-
 
                 <div className="rounded-lg bg-surface p-2.5">
 
@@ -1372,7 +1273,6 @@ useEffect(() => {
 
             </div>
 
-
             {/* Modal Actions */}
 
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
@@ -1389,7 +1289,6 @@ useEffect(() => {
               >
                 View My Applications
               </button>
-
 
               {/* Continue Browsing */}
 
@@ -1414,6 +1313,5 @@ useEffect(() => {
     </div>
   );
 };
-
 
 export default CandidateJobDetails;

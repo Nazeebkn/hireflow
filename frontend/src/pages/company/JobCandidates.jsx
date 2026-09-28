@@ -53,10 +53,10 @@ function JobCandidates() {
       value: "AI_INTERVIEW",
       label: "AI Interview",
     },
-    {
-      value: "CLASSIFIED",
-      label: "Shortlisted",
-    },
+ {
+  value: "SHORTLISTED",
+  label: "Shortlisted",
+},
     {
       value: "FINAL_INTERVIEW",
       label: "Final Interview",

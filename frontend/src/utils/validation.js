@@ -16,8 +16,7 @@ export const validateEmail = (email) => {
   }
 
   // Email format
-  const emailPattern =
-    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   if (!emailPattern.test(value)) {
     return "Please enter a valid email address.";
@@ -25,8 +24,6 @@ export const validateEmail = (email) => {
 
   return "";
 };
-
-
 
 export const validatePassword = (password) => {
   const value = password || "";
@@ -70,11 +67,7 @@ export const validatePassword = (password) => {
   return "";
 };
 
-
-export const validateConfirmPassword = (
-  password,
-  confirmPassword
-) => {
+export const validateConfirmPassword = (password, confirmPassword) => {
   const value = confirmPassword || "";
 
   if (!value.trim()) {
@@ -96,12 +89,7 @@ export const validateConfirmPassword = (
   return "";
 };
 
-
-export const validateName = (
-  name,
-  field = "Name",
-  minLength = 2
-) => {
+export const validateName = (name, field = "Name", minLength = 2) => {
   const value = (name || "").trim();
 
   if (!value) {
@@ -139,9 +127,6 @@ export const validateName = (
   return "";
 };
 
-
-
-
 export const validatePhone = (phone) => {
   const value = (phone || "").trim();
 
@@ -172,8 +157,6 @@ export const validatePhone = (phone) => {
   return "";
 };
 
-
-
 export const validateDateOfBirth = (dob) => {
   const value = (dob || "").trim();
 
@@ -196,13 +179,11 @@ export const validateDateOfBirth = (dob) => {
 
   let age = today.getFullYear() - birthDate.getFullYear();
 
-  const monthDifference =
-    today.getMonth() - birthDate.getMonth();
+  const monthDifference = today.getMonth() - birthDate.getMonth();
 
   if (
     monthDifference < 0 ||
-    (monthDifference === 0 &&
-      today.getDate() < birthDate.getDate())
+    (monthDifference === 0 && today.getDate() < birthDate.getDate())
   ) {
     age--;
   }
@@ -217,7 +198,6 @@ export const validateDateOfBirth = (dob) => {
 
   return "";
 };
-
 
 export const validateAbout = (about) => {
   const value = (about || "").trim();
@@ -260,8 +240,6 @@ export const validateAbout = (about) => {
   return "";
 };
 
-
-
 export const validateHeadline = (headline) => {
   const value = (headline || "").trim();
 
@@ -303,17 +281,12 @@ export const validateHeadline = (headline) => {
   return "";
 };
 
-
 export const validateProfilePhoto = (file) => {
   if (!file) {
     return "Profile photo is required.";
   }
 
-  const allowedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-  ];
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
   if (!allowedTypes.includes(file.type)) {
     return "Only JPG, JPEG and PNG image files are allowed.";
@@ -332,8 +305,6 @@ export const validateProfilePhoto = (file) => {
 
   return "";
 };
-
-
 
 export const validateLocation = (location) => {
   const value = (location || "").trim();
@@ -376,8 +347,6 @@ export const validateLocation = (location) => {
   return "";
 };
 
-
-
 export const validateEducation = (education) => {
   const value = (education || "").trim();
 
@@ -400,7 +369,6 @@ export const validateEducation = (education) => {
 
   return "";
 };
-
 
 export const validateGraduationYear = (year) => {
   const value = (year || "").trim();
@@ -439,8 +407,6 @@ export const validateGraduationYear = (year) => {
   return "";
 };
 
-
-
 export const validateExperienceLevel = (experience) => {
   const value = (experience || "").trim();
 
@@ -462,7 +428,6 @@ export const validateExperienceLevel = (experience) => {
 
   return "";
 };
-
 
 export const validateJobTitle = (jobTitle) => {
   const value = (jobTitle || "").trim();
@@ -510,8 +475,6 @@ export const validateJobTitle = (jobTitle) => {
   return "";
 };
 
-
-
 export const validateSkill = (skill) => {
   const value = (skill || "").trim();
 
@@ -544,8 +507,6 @@ export const validateSkill = (skill) => {
   return "";
 };
 
-
-
 export const validateSalary = (salary) => {
   const value = (salary || "").trim();
 
@@ -577,8 +538,6 @@ export const validateSalary = (salary) => {
 
   return "";
 };
-
-
 
 export const validateInstitution = (institution) => {
   const value = (institution || "").trim();
@@ -626,8 +585,6 @@ export const validateInstitution = (institution) => {
   return "";
 };
 
-
-
 export const validateQualification = (qualification) => {
   const value = (qualification || "").trim();
 
@@ -673,7 +630,6 @@ export const validateQualification = (qualification) => {
 
   return "";
 };
-
 
 export const validateCompany = (company) => {
   const value = (company || "").trim();
@@ -721,9 +677,6 @@ export const validateCompany = (company) => {
   return "";
 };
 
-
-
-
 export const validateResume = (file) => {
   if (!file) {
     return "Resume is required.";
@@ -746,11 +699,7 @@ export const validateResume = (file) => {
   return "";
 };
 
-
-
-export const validateEmploymentType = (
-  employmentType
-) => {
+export const validateEmploymentType = (employmentType) => {
   const value = (employmentType || "").trim();
 
   if (!value) {
@@ -771,22 +720,14 @@ export const validateEmploymentType = (
   return "";
 };
 
-
-
-export const validateWorkMode = (
-  workMode
-) => {
+export const validateWorkMode = (workMode) => {
   const value = (workMode || "").trim();
 
   if (!value) {
     return "Preferred Work Mode is required.";
   }
 
-  const validWorkModes = [
-    "ONSITE",
-    "HYBRID",
-    "REMOTE",
-  ];
+  const validWorkModes = ["ONSITE", "HYBRID", "REMOTE"];
 
   if (!validWorkModes.includes(value)) {
     return "Please select a valid Preferred Work Mode.";
@@ -794,8 +735,6 @@ export const validateWorkMode = (
 
   return "";
 };
-
-
 
 export const validateCompanyName = (companyName) => {
   const value = (companyName || "").trim();
@@ -835,19 +774,13 @@ export const validateCompanyName = (companyName) => {
   return "";
 };
 
-
 export const validateContactPerson = (contactPerson) => {
-  return validateName(
-    contactPerson,
-    "Contact Person"
-  );
+  return validateName(contactPerson, "Contact Person");
 };
-
 
 export const validateContactPhone = (phone) => {
   return validatePhone(phone);
 };
-
 
 export const validateWebsite = (website) => {
   const value = (website || "").trim();
@@ -881,9 +814,6 @@ export const validateWebsite = (website) => {
   return "";
 };
 
-
-
-
 export const validateDescription = (description) => {
   const value = (description || "").trim();
 
@@ -914,3 +844,134 @@ export const validateDescription = (description) => {
   return "";
 };
 
+
+// ==========================================
+// LINKEDIN URL
+// ==========================================
+
+export const validateLinkedIn = (linkedin) => {
+  const value = (linkedin || "").trim();
+
+  // Optional field
+  if (!value) {
+    return "";
+  }
+
+  // Leading / trailing spaces
+  if (linkedin !== value) {
+    return "LinkedIn URL cannot start or end with spaces.";
+  }
+
+  if (value.length > 500) {
+    return "LinkedIn URL cannot exceed 500 characters.";
+  }
+
+  // Must use HTTP or HTTPS
+  if (!/^https?:\/\//i.test(value)) {
+    return "LinkedIn URL must start with http:// or https://.";
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.hostname.toLowerCase() !== "linkedin.com" &&
+        !url.hostname.toLowerCase().endsWith(".linkedin.com")) {
+      return "Please enter a valid LinkedIn URL.";
+    }
+
+    if (!url.pathname || url.pathname === "/") {
+      return "Please enter a valid LinkedIn profile URL.";
+    }
+  } catch {
+    return "Please enter a valid LinkedIn URL.";
+  }
+
+  return "";
+};
+
+
+// ==========================================
+// GITHUB URL
+// ==========================================
+
+export const validateGitHub = (github) => {
+  const value = (github || "").trim();
+
+  // Optional field
+  if (!value) {
+    return "";
+  }
+
+  // Leading / trailing spaces
+  if (github !== value) {
+    return "GitHub URL cannot start or end with spaces.";
+  }
+
+  if (value.length > 500) {
+    return "GitHub URL cannot exceed 500 characters.";
+  }
+
+  // Must use HTTP or HTTPS
+  if (!/^https?:\/\//i.test(value)) {
+    return "GitHub URL must start with http:// or https://.";
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (
+      url.hostname.toLowerCase() !== "github.com" &&
+      !url.hostname.toLowerCase().endsWith(".github.com")
+    ) {
+      return "Please enter a valid GitHub URL.";
+    }
+
+    if (!url.pathname || url.pathname === "/") {
+      return "Please enter a valid GitHub profile URL.";
+    }
+  } catch {
+    return "Please enter a valid GitHub URL.";
+  }
+
+  return "";
+};
+
+
+// ==========================================
+// PORTFOLIO URL
+// ==========================================
+
+export const validatePortfolio = (portfolio) => {
+  const value = (portfolio || "").trim();
+
+  // Optional field
+  if (!value) {
+    return "";
+  }
+
+  // Leading / trailing spaces
+  if (portfolio !== value) {
+    return "Portfolio URL cannot start or end with spaces.";
+  }
+
+  if (value.length > 500) {
+    return "Portfolio URL cannot exceed 500 characters.";
+  }
+
+  // Must use HTTP or HTTPS
+  if (!/^https?:\/\//i.test(value)) {
+    return "Portfolio URL must start with http:// or https://.";
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (!url.hostname || !url.hostname.includes(".")) {
+      return "Please enter a valid portfolio URL.";
+    }
+  } catch {
+    return "Please enter a valid portfolio URL.";
+  }
+
+  return "";
+};

@@ -7,3 +7,23 @@ export const getJobApplications = async (jobId) => {
 
   return response.data;
 };
+
+export const getCompanyApplicationById = async (
+  applicationId
+) => {
+  const response = await api.get(
+    `/company/applications/${applicationId}/`
+  );
+
+  return response.data;
+};
+
+export const getCompanyResumeScreeningReport = async (
+  applicationId
+) => {
+  const response = await api.get(
+    `/company/applications/${applicationId}/resume-screening/`
+  );
+
+  return response.data;
+};

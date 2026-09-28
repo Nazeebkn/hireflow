@@ -4,13 +4,12 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 
-
 function formatApplicationStatus(status) {
   const labels = {
     APPLIED: "Applied",
     RESUME_SCREENING: "Resume Screening",
+    SHORTLISTED: "Shortlisted",
     AI_INTERVIEW: "AI Interview",
-    CLASSIFIED: "Classified",
     SELECTED: "Selected",
     FINAL_INTERVIEW: "Final Interview",
     HIRED: "Hired",
@@ -20,13 +19,12 @@ function formatApplicationStatus(status) {
   return labels[status] || status || "-";
 }
 
-
 function getStatusClasses(status) {
   const classes = {
     APPLIED: "bg-blue-50 text-blue-700",
     RESUME_SCREENING: "bg-amber-50 text-amber-700",
+    SHORTLISTED: "bg-cyan-50 text-cyan-700",
     AI_INTERVIEW: "bg-violet-50 text-violet-700",
-    CLASSIFIED: "bg-cyan-50 text-cyan-700",
     SELECTED: "bg-emerald-50 text-emerald-700",
     FINAL_INTERVIEW: "bg-indigo-50 text-indigo-700",
     HIRED: "bg-green-50 text-green-700",
@@ -38,7 +36,6 @@ function getStatusClasses(status) {
     "bg-slate-50 text-slate-700"
   );
 }
-
 
 function formatAppliedDate(dateValue) {
   if (!dateValue) {
@@ -57,7 +54,6 @@ function formatAppliedDate(dateValue) {
     year: "numeric",
   });
 }
-
 
 function RecentApplicationsTable({
   applications = [],
@@ -134,7 +130,6 @@ function RecentApplicationsTable({
 
             </thead>
 
-
             <tbody className="divide-y divide-border">
 
               {applications.slice(0, 5).map((application) => (
@@ -169,7 +164,6 @@ function RecentApplicationsTable({
 
                   </td>
 
-
                   {/* Job */}
                   <td className="px-4 py-3">
 
@@ -188,7 +182,6 @@ function RecentApplicationsTable({
 
                   </td>
 
-
                   {/* Status */}
                   <td className="px-4 py-3">
 
@@ -203,7 +196,6 @@ function RecentApplicationsTable({
                     </span>
 
                   </td>
-
 
                   {/* Applied */}
                   <td className="whitespace-nowrap px-4 py-3">

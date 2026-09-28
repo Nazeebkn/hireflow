@@ -55,8 +55,8 @@ class CandidateDashboardRepository:
             candidate=profile,
             status__in=[
                 JobApplication.ApplicationStatus.RESUME_SCREENING,
+                JobApplication.ApplicationStatus.SHORTLISTED,
                 JobApplication.ApplicationStatus.AI_INTERVIEW,
-                JobApplication.ApplicationStatus.CLASSIFIED,
                 JobApplication.ApplicationStatus.FINAL_INTERVIEW,
             ],
         ).count()
