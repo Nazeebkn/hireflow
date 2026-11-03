@@ -63,15 +63,18 @@ class AIInterviewAnswerRepository:
         answer,
         submitted_code,
         test_results,
+        score
     ):
         answer.submitted_code = submitted_code
         answer.test_results = test_results
+        answer.score = score
         answer.submitted_at = timezone.now()
 
         answer.save(
             update_fields=[
                 "submitted_code",
                 "test_results",
+                "score",
                 "submitted_at",
                 "updated_at",
             ]

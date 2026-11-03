@@ -1,17 +1,15 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from admin_app.services.admin.candidate_details_service import (
-    CandidateDetailsService,
-)
-
+from admin_app.permissions import IsAdminUser
 from admin_app.serializers.admin.candidate_details_serializer import (
     CandidateDetailsSerializer,
 )
-
-from rest_framework.permissions import IsAuthenticated
-from admin_app.permissions import IsAdminUser
+from admin_app.services.admin.candidate_details_service import (
+    CandidateDetailsService,
+)
 
 
 class CandidateDetailsAPIView(APIView):

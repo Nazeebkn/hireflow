@@ -1,7 +1,7 @@
 from django.db import models
+
 from core.storages import AudioCloudinaryStorage
 from users.models import User
-
 
 
 class CandidateProfile(models.Model):
@@ -304,6 +304,7 @@ class CandidateJobPreference(models.Model):
     
 class Notification(models.Model):
     class NotificationType(models.TextChoices):
+        # Candidate notifications
         RESUME_SCREENING_COMPLETED = (
             "RESUME_SCREENING_COMPLETED",
             "Resume Screening Completed",
@@ -329,6 +330,52 @@ class Notification(models.Model):
             "AI Interview Result",
         )
 
+        # Company notifications
+        NEW_CANDIDATE_APPLIED = (
+            "NEW_CANDIDATE_APPLIED",
+            "New Candidate Applied",
+        )
+        COMPANY_RESUME_SCREENING_COMPLETED = (
+            "COMPANY_RESUME_SCREENING_COMPLETED",
+            "Company Resume Screening Completed",
+        )
+        CANDIDATE_SHORTLISTED = (
+            "CANDIDATE_SHORTLISTED",
+            "Candidate Shortlisted",
+        )
+        COMPANY_AI_INTERVIEW_COMPLETED = (
+            "COMPANY_AI_INTERVIEW_COMPLETED",
+            "Company AI Interview Completed",
+        )
+        CANDIDATE_SELECTED = (
+            "CANDIDATE_SELECTED",
+            "Candidate Selected",
+        )
+        CANDIDATE_REJECTED = (
+            "CANDIDATE_REJECTED",
+            "Candidate Rejected",
+        )
+      # Admin notifications
+
+        NEW_COMPANY_REGISTRATION = (
+            "NEW_COMPANY_REGISTRATION",
+            "New Company Registration",
+        )
+
+        NEW_JOB_CREATED = (
+            "NEW_JOB_CREATED",
+            "New Job Created",
+        )
+
+        NEW_CANDIDATE_REGISTRATION = (
+            "NEW_CANDIDATE_REGISTRATION",
+            "New Candidate Registration",
+        )
+
+        NEW_JOB_APPLICATION = (
+            "NEW_JOB_APPLICATION",
+            "New Job Application",
+)
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -413,6 +460,9 @@ class AIInterviewQuestion(models.Model):
         ordering = ["question_order"]
         unique_together = ("interview", "question_order")
 
+
+
+
 class AIInterviewAnswer(models.Model):
 
     question = models.OneToOneField(
@@ -459,3 +509,63 @@ class AIInterviewAnswer(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    
+    
+
+class AIInterviewReport(models.Model):
+
+    interview = models.OneToOneField(
+        "company_app.AIInterview",
+        on_delete=models.CASCADE,
+        related_name="candidate_report",
+    )
+
+    overall_score = models.PositiveIntegerField(
+        default=0,
+    )
+
+    total_questions = models.PositiveIntegerField(
+        default=0,
+    )
+
+    answered_questions = models.PositiveIntegerField(
+        default=0,
+    )
+
+    strengths = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    areas_to_improve = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    skill_analysis = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    recommendation = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+
+    summary = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    generated_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    def __str__(self):
+        return f"AI Interview Report - Interview {self.interview_id}"

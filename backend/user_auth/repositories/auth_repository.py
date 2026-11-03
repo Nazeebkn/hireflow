@@ -1,5 +1,7 @@
-from users.models import User
 from django.contrib.auth import authenticate
+
+from users.models import User
+
 
 class AuthRepository:
 

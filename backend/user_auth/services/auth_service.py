@@ -1,19 +1,23 @@
 from django.conf import settings
+from django.contrib.auth.tokens import (
+    PasswordResetTokenGenerator,
+    default_token_generator,
+)
 from django.core.mail import send_mail
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from google.auth.transport import requests
+from google.oauth2 import id_token
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from company_app.models import Company
 
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
-from django.contrib.auth.tokens import default_token_generator
+from company_app.models import Company
 from user_auth.repositories.auth_repository import AuthRepository
 from users.models import User
+
+from admin_app.services.notification.notification_service import (
+    AdminNotificationService,
+)
 
 class AuthService:
 
@@ -71,11 +75,26 @@ class AuthService:
 
         user = AuthRepository.create_user(validated_data)
 
+        if user.role == User.UserRole.COMPANY:
+            AdminNotificationService.notify_admins(
+                notification_type="NEW_COMPANY_REGISTERED",
+                title="New Company Registration",
+                message=f"New company registered with email {user.email}.",
+            )
+
+        elif user.role == User.UserRole.CANDIDATE:
+            AdminNotificationService.notify_admins(
+                notification_type="NEW_CANDIDATE_REGISTERED",
+                title="New Candidate Registration",
+                message=f"New candidate registered with email {user.email}.",
+            )
+
         token = default_token_generator.make_token(user)
 
         return user, token
         
         
+    
     
     @staticmethod
     def login(validated_data):
@@ -114,6 +133,28 @@ class AuthService:
             raise serializers.ValidationError({
                 "message": "Invalid email or password."
             })
+            
+            
+        
+        if user.role == User.UserRole.CANDIDATE:
+
+            send_mail(
+                subject="Login Successful - HireFlow",
+                message=(
+                    f"Hello {user.email},\n\n"
+                    "You have successfully logged in to HireFlow.\n\n"
+                    "You can now access your candidate dashboard "
+                    "and explore available job opportunities.\n\n"
+                    "If you did not perform this login, please "
+                    "secure your account.\n\n"
+                    "Thank you for choosing HireFlow!"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+
 
         refresh = RefreshToken.for_user(user)
 
@@ -121,7 +162,7 @@ class AuthService:
         approval_status = None
 
         if user.role == "COMPANY":
-
+            
             company = Company.objects.filter(
                 user=user
             ).first()
@@ -185,6 +226,20 @@ class AuthService:
             email,
             role,
         )
+
+        if user.role == User.UserRole.COMPANY:
+            AdminNotificationService.notify_admins(
+                notification_type="NEW_COMPANY_REGISTERED",
+                title="New Company Registration",
+                message=f"New company registered with email {user.email}.",
+            )
+
+        elif user.role == User.UserRole.CANDIDATE:
+            AdminNotificationService.notify_admins(
+                notification_type="NEW_CANDIDATE_REGISTERED",
+                title="New Candidate Registration",
+                message=f"New candidate registered with email {user.email}.",
+            )
 
         refresh = RefreshToken.for_user(user)
 

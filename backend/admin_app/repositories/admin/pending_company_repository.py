@@ -1,6 +1,6 @@
 from company_app.models import (
-    Company,
     ApprovalStatus,
+    Company,
 )
 
 

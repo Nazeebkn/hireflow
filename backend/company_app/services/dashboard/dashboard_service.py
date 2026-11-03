@@ -1,10 +1,9 @@
 from django.core.exceptions import ValidationError
 
-from users.models import User
-
 from company_app.repositories.dashboard.dashboard_repository import (
     DashboardRepository,
 )
+from users.models import User
 
 
 class DashboardService:

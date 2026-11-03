@@ -1,33 +1,47 @@
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
 
-from candidate_app.services.candidate_profile_service import CandidateProfileService
+from candidate_app.serializers.candidate_education_serializer import (
+    CandidateEducationSerializer,
+)
+from candidate_app.serializers.candidate_experience_serializer import (
+    CandidateExperienceSerializer,
+)
+from candidate_app.serializers.candidate_job_preference_serializer import (
+    CandidateJobPreferenceSerializer,
+)
+from candidate_app.serializers.candidate_profile_serializer import (
+    CandidateProfileSerializer,
+)
+from candidate_app.serializers.candidate_resume_serializer import (
+    CandidateResumeSerializer,
+)
+from candidate_app.serializers.candidate_skill_serializer import (
+    CandidateSkillSerializer,
+)
 from candidate_app.services.candidate_education_service import CandidateEducationService
-from candidate_app.services.candidate_experience_service import CandidateExperienceService
+from candidate_app.services.candidate_experience_service import (
+    CandidateExperienceService,
+)
+from candidate_app.services.candidate_job_preference_service import (
+    CandidateJobPreferenceService,
+)
+from candidate_app.services.candidate_profile_completion_service import (
+    CandidateProfileCompletionService,
+)
+from candidate_app.services.candidate_profile_service import CandidateProfileService
 from candidate_app.services.candidate_skill_service import CandidateSkillService
-from candidate_app.services.candidate_job_preference_service import CandidateJobPreferenceService
-
-from candidate_app.serializers.candidate_profile_serializer import CandidateProfileSerializer
-from candidate_app.serializers.candidate_education_serializer import CandidateEducationSerializer
-from candidate_app.serializers.candidate_experience_serializer import CandidateExperienceSerializer
-from candidate_app.serializers.candidate_skill_serializer import CandidateSkillSerializer
-from candidate_app.serializers.candidate_resume_serializer import CandidateResumeSerializer
-from candidate_app.serializers.candidate_job_preference_serializer import CandidateJobPreferenceSerializer
 
 from .serializers.career_profile_completion_serializer import (
     CareerProfileCompletionSerializer,
 )
-
-from candidate_app.services.candidate_profile_completion_service import (
-    CandidateProfileCompletionService,
-)
-
 from .services.career_profile_completion_service import (
     CareerProfileCompletionService,
 )
+
 
 class CandidateProfileAPIView(APIView):
 

@@ -1,5 +1,7 @@
 import os
 import time
+import httpx
+
 from google import genai
 
 
@@ -20,12 +22,44 @@ class GeminiService:
     def generate_text(prompt):
         client = GeminiService.get_client()
 
-        interaction = client.interactions.create(
-            model="gemini-3.6-flash",
-            input=prompt,
-        )
+        try:
+            api_key = os.getenv("GEMINI_API_KEY")
+            url = (
+                "https://generativelanguage.googleapis.com/v1beta/models/"
+                "gemini-3-flash-preview:generateContent"
+                f"?key={api_key}"
+            )
 
-        return interaction.output_text
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            }
+
+            response = httpx.post(
+                url,
+                json=payload,
+                timeout=60,
+            )
+            response.raise_for_status()
+
+            data = response.json()
+
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+
+        except Exception as exc:
+            error_message = str(exc)
+
+            if "429" in error_message or "Too Many Requests" in error_message:
+                print("Gemini rate limit reached. No retry will be attempted.")
+
+            raise
         
             
     @staticmethod

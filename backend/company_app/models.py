@@ -1,4 +1,5 @@
 from django.db import models
+
 from users.models import User
 
 
@@ -223,6 +224,16 @@ class JobApplication(models.Model):
         max_length=30,
         choices=ApplicationStatus.choices,
         default=ApplicationStatus.APPLIED,
+    )
+
+    resume_screening_error = models.CharField(
+        max_length=20,
+        choices=[
+            ("QUOTA_ERROR", "Quota error"),
+            ("OTHER_ERROR", "Other error"),
+        ],
+        blank=True,
+        null=True,
     )
 
     applied_at = models.DateTimeField(

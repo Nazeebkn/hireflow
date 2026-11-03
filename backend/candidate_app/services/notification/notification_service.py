@@ -1,7 +1,7 @@
+from candidate_app.models import Notification
 from candidate_app.repositories.notification.notification_repository import (
     NotificationRepository,
 )
-from candidate_app.models import Notification
 
 
 class NotificationService:

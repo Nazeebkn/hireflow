@@ -1,11 +1,10 @@
 from rest_framework.exceptions import NotFound
 
-from candidate_app.repositories.candidate_profile_repository import (
-    CandidateProfileRepository,
-)
-
 from candidate_app.repositories.candidate_profile_completion_repository import (
     CandidateProfileCompletionRepository,
+)
+from candidate_app.repositories.candidate_profile_repository import (
+    CandidateProfileRepository,
 )
 
 

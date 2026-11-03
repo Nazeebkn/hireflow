@@ -1,8 +1,8 @@
 from django.db.models import Q
 
 from company_app.models import (
-    Company,
     ApprovalStatus,
+    Company,
 )
 
 

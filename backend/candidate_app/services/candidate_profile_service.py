@@ -1,7 +1,7 @@
 import time
 
 from cloudinary import uploader
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from candidate_app.repositories.candidate_profile_repository import (
     CandidateProfileRepository,

@@ -1,20 +1,17 @@
+import base64
 import json
 import os
-import base64
 
 from google import genai
 from rest_framework.exceptions import NotFound
 
+from candidate_app.models import Notification
 from candidate_app.repositories.ai.resume_screening_repository import (
     ResumeScreeningRepository,
 )
-
 from candidate_app.services.ai.ai_interview_service import (
     AIInterviewService,
 )
-
-from candidate_app.models import Notification
-
 from candidate_app.services.notification.notification_service import (
     NotificationService,
 )
@@ -43,66 +40,66 @@ class ResumeScreeningService:
             resume_data = resume_file.read()
 
         prompt = f"""
-You are an AI resume screening system for HireFlow.
+    You are an AI resume screening system for HireFlow.
 
-Analyze the candidate's resume against the following job requirements.
+    Analyze the candidate's resume against the following job requirements.
 
-JOB DETAILS:
+    JOB DETAILS:
 
-Job Title:
-{job.title}
+    Job Title:
+    {job.title}
 
-Job Description:
-{job.description}
+    Job Description:
+    {job.description}
 
-Required Skills:
-{job.skills}
+    Required Skills:
+    {job.skills}
 
-Education:
-{job.education}
+    Education:
+    {job.education}
 
-Experience Required:
-{job.experience_required}
+    Experience Required:
+    {job.experience_required}
 
-Employment Type:
-{job.employment_type}
+    Employment Type:
+    {job.employment_type}
 
-Work Mode:
-{job.work_mode}
+    Work Mode:
+    {job.work_mode}
 
-Location:
-{job.location}
+    Location:
+    {job.location}
 
-Evaluate the candidate based only on the information available in the resume.
+    Evaluate the candidate based only on the information available in the resume.
 
-Return ONLY valid JSON in this exact structure:
+    Return ONLY valid JSON in this exact structure:
 
-{{
-    "overall_score": 0,
-    "skills_score": 0,
-    "experience_score": 0,
-    "education_score": 0,
-    "recommendation": "SHORTLISTED",
-    "summary": "",
-    "strengths": [],
-    "gaps": []
-}}
+    {{
+        "overall_score": 0,
+        "skills_score": 0,
+        "experience_score": 0,
+        "education_score": 0,
+        "recommendation": "SHORTLISTED",
+        "summary": "",
+        "strengths": [],
+        "gaps": []
+    }}
 
-Rules:
+    Rules:
 
-- All scores must be between 0 and 100.
-- overall_score represents the overall match between the candidate and the job.
-- skills_score evaluates the candidate's required skill match.
-- experience_score evaluates relevant experience.
-- education_score evaluates educational requirements.
-- recommendation must be either "SHORTLISTED" or "REJECTED".
-- Do not invent information that is not present in the resume.
-- strengths must be an array of strings.
-- gaps must be an array of strings.
-"""
+    - All scores must be between 0 and 100.
+    - overall_score represents the overall match between the candidate and the job.
+    - skills_score evaluates the candidate's required skill match.
+    - experience_score evaluates relevant experience.
+    - education_score evaluates educational requirements.
+    - recommendation must be either "SHORTLISTED" or "REJECTED".
+    - Do not invent information that is not present in the resume.
+    - strengths must be an array of strings.
+    - gaps must be an array of strings.
+    """
 
         interaction = client.interactions.create(
-            model="gemini-3.6-flash",
+            model="gemini-3-flash-preview",
             input=[
                 {
                     "type": "text",
@@ -193,6 +190,27 @@ Rules:
             gaps=screening_result["gaps"],
         )
 
+        # =====================================================
+        # COMPANY - RESUME SCREENING COMPLETED
+        # =====================================================
+
+        NotificationService.create_notification(
+            user=application.job.company.user,
+            notification_type=(
+                Notification.NotificationType
+                .COMPANY_RESUME_SCREENING_COMPLETED
+            ),
+            title="Resume Screening Completed",
+            message=(
+                f"Resume screening has been completed for "
+                f"{application.job.title}."
+            ),
+        )
+
+        # =====================================================
+        # SHORTLISTED
+        # =====================================================
+
         if screening.recommendation == "SHORTLISTED":
 
             application_status = (
@@ -204,7 +222,7 @@ Rules:
                 status=application_status,
             )
 
-            # Create shortlisted notification
+            # Candidate notification
             NotificationService.create_notification(
                 user=application.candidate.user,
                 notification_type=(
@@ -218,10 +236,28 @@ Rules:
                 ),
             )
 
+            # Company notification
+            NotificationService.create_notification(
+                user=application.job.company.user,
+                notification_type=(
+                    Notification.NotificationType
+                    .CANDIDATE_SHORTLISTED
+                ),
+                title="Candidate Shortlisted",
+                message=(
+                    f"A candidate has been shortlisted for "
+                    f"{application.job.title}."
+                ),
+            )
+
             # Automatically schedule AI interview
             AIInterviewService.schedule_interview(
                 application
             )
+
+        # =====================================================
+        # REJECTED
+        # =====================================================
 
         else:
 
@@ -234,7 +270,7 @@ Rules:
                 status=application_status,
             )
 
-            # Create rejected notification
+            # Candidate notification
             NotificationService.create_notification(
                 user=application.candidate.user,
                 notification_type=(
@@ -249,7 +285,22 @@ Rules:
                 ),
             )
 
+            # Company notification
+            NotificationService.create_notification(
+                user=application.job.company.user,
+                notification_type=(
+                    Notification.NotificationType
+                    .CANDIDATE_REJECTED
+                ),
+                title="Candidate Rejected",
+                message=(
+                    f"A candidate has been rejected for "
+                    f"{application.job.title}."
+                ),
+            )
+
         return screening
+
 
     @staticmethod
     def get_screening(application):

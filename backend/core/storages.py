@@ -1,4 +1,7 @@
-from cloudinary_storage.storage import MediaCloudinaryStorage  # type: ignore[import-not-found]
+from cloudinary_storage.storage import (
+    MediaCloudinaryStorage,  # type: ignore[import-not-found]
+)
+
 
 class AudioCloudinaryStorage(MediaCloudinaryStorage):
 

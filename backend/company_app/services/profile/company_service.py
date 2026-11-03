@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
-from company_app.models import Company, ApprovalStatus
+from company_app.models import ApprovalStatus
 from company_app.repositories.profile.company_repository import CompanyRepository
 
 

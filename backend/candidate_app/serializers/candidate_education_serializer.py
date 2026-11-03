@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from ..models import CandidateEducation
 
+from ..models import CandidateEducation
 
 
 class CandidateEducationSerializer(serializers.ModelSerializer):

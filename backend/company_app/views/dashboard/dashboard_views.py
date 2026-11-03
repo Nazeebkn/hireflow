@@ -1,15 +1,13 @@
 from django.core.exceptions import ValidationError
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-
-from company_app.services.dashboard.dashboard_service import (
-    DashboardService,
-)
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from company_app.serializers.dashboard.dashboard_serializer import (
     DashboardSerializer,
+)
+from company_app.services.dashboard.dashboard_service import (
+    DashboardService,
 )
 
 

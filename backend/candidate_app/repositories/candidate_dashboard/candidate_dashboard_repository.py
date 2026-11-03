@@ -1,11 +1,10 @@
 from candidate_app.models import (
-    CandidateProfile,
     CandidateEducation,
     CandidateExperience,
-    CandidateSkill,
     CandidateJobPreference,
+    CandidateProfile,
+    CandidateSkill,
 )
-
 from company_app.models import JobApplication
 
 

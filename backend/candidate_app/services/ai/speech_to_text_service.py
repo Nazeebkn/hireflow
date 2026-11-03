@@ -1,4 +1,3 @@
-# CHANGED BY VS CODE - WebM to WAV transcription fix
 import os
 import shutil
 import subprocess
@@ -26,7 +25,6 @@ class SpeechToTextService:
     def transcribe_audio(cls, audio_file):
         model = cls.get_model()
 
-        # CHANGED BY VS CODE - WebM to WAV transcription fix
         ffmpeg_path = shutil.which("ffmpeg")
 
         if not ffmpeg_path:

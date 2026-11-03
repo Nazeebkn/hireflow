@@ -1,34 +1,23 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-
-from django.core.mail import send_mail
-from django.conf import settings
-
-from django.utils.http import urlsafe_base64_encode
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_bytes
-from django.utils.encoding import force_str
-
-from google.auth.transport import requests
-from google.oauth2 import id_token
-
-from users.models import User
 from .serializers import (
-    SignupSerializer,
+    ForgotPasswordSerializer,
+    GoogleLoginSerializer,
+    GoogleSignupSerializer,
     LoginSerializer,
     LogoutSerializer,
-    ForgotPasswordSerializer,
     ResetPasswordSerializer,
-    GoogleLoginSerializer,
-    GoogleSignupSerializer
+    SignupSerializer,
 )
-
 from .services.auth_service import AuthService
+
 
 class SignupAPIView(APIView):
     
@@ -91,6 +80,7 @@ class LoginAPIView(APIView):
                 data,
                 status=status.HTTP_200_OK
             )
+            
 
         return Response(
             serializer.errors,

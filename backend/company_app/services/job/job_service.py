@@ -4,6 +4,10 @@ from django.utils import timezone
 from company_app.repositories.job.job_repository import JobRepository
 from users.models import User
 
+from candidate_app.models import Notification
+from admin_app.services.notification.notification_service import (
+    AdminNotificationService,
+)
 
 class JobService:
 
@@ -27,10 +31,22 @@ class JobService:
                 "Only approved companies can create job vacancies."
             )
 
-        return JobRepository.create_job(
+        job = JobRepository.create_job(
             company,
             validated_data
         )
+
+        AdminNotificationService.notify_admins(
+            notification_type=Notification.NotificationType.NEW_JOB_CREATED,
+            title="New Job Created",
+            message=(
+                f"New job '{job.title}' was created by "
+                f"{company.company_name}."
+            ),
+        )
+
+        return job
+
 
     @staticmethod
     def update_job(user, job, validated_data):

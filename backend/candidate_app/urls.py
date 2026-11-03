@@ -1,58 +1,54 @@
 from django.urls import path
 
-from .views import (
-    CandidateProfileAPIView,
-    CandidateResumeAPIView,
-    CandidateEducationAPIView,
-    CandidateEducationDetailAPIView,
-    CandidateExperienceAPIView,
-    CandidateExperienceDetailAPIView,
-    CandidateSkillAPIView,
-    CandidateSkillDetailAPIView,
-    CandidateJobPreferenceAPIView,
-    CareerProfileCompletionAPIView,
-    CandidateProfileCompletionAPIView,
+from candidate_app.candidate_views.ai.ai_interview_answer_views import (
+    SubmitAIInterviewAnswerAPIView,
 )
-
-from candidate_app.candidate_views.candidate_dashboard.candidate_dashboard_view import (
-    CandidateDashboardAPIView,
-)
-
-from candidate_app.candidate_views.candidate_job.candidate_job_view import (
-    CandidateJobAPIView,
-    CandidateJobDetailAPIView,
-    CandidateJobApplicationAPIView,
-    CandidateApplicationsAPIView,
-    CandidateApplicationDetailAPIView,
-)
-
-from candidate_app.candidate_views.notification.notification_views import (
-    CandidateNotificationListAPIView,
-    CandidateNotificationReadAPIView,
-    CandidateNotificationMarkAllReadAPIView,
-    CandidateNotificationUnreadCountAPIView,
-    CandidateNotificationClearAllAPIView,
-    CandidateNotificationDeleteAPIView,
+from candidate_app.candidate_views.ai.ai_interview_question_views import (
+    AIInterviewQuestionsAPIView,
 )
 
 # ============================================================
 # AI VIEWS
 # ============================================================
-
 from candidate_app.candidate_views.ai.ai_interview_views import (
+    AIInterviewReportAPIView,
+    CompleteAIInterviewAPIView,
     StartAIInterviewAPIView,
 )
-
 from candidate_app.candidate_views.ai.resume_screening_view import (
     ResumeScreeningReportAPIView,
 )
-
-from candidate_app.candidate_views.ai.ai_interview_question_views import (
-    AIInterviewQuestionsAPIView,
+from candidate_app.candidate_views.candidate_dashboard.candidate_dashboard_view import (
+    CandidateDashboardAPIView,
+)
+from candidate_app.candidate_views.candidate_job.candidate_job_view import (
+    CandidateApplicationDetailAPIView,
+    CandidateApplicationsAPIView,
+    CandidateJobAPIView,
+    CandidateJobApplicationAPIView,
+    CandidateJobDetailAPIView,
+)
+from candidate_app.candidate_views.notification.notification_views import (
+    CandidateNotificationClearAllAPIView,
+    CandidateNotificationDeleteAPIView,
+    CandidateNotificationListAPIView,
+    CandidateNotificationMarkAllReadAPIView,
+    CandidateNotificationReadAPIView,
+    CandidateNotificationUnreadCountAPIView,
 )
 
-from candidate_app.candidate_views.ai.ai_interview_answer_views import (
-    SubmitAIInterviewAnswerAPIView,
+from .views import (
+    CandidateEducationAPIView,
+    CandidateEducationDetailAPIView,
+    CandidateExperienceAPIView,
+    CandidateExperienceDetailAPIView,
+    CandidateJobPreferenceAPIView,
+    CandidateProfileAPIView,
+    CandidateProfileCompletionAPIView,
+    CandidateResumeAPIView,
+    CandidateSkillAPIView,
+    CandidateSkillDetailAPIView,
+    CareerProfileCompletionAPIView,
 )
 
 urlpatterns = [
@@ -251,5 +247,20 @@ urlpatterns = [
     "interviews/questions/<int:question_id>/answer/",
     SubmitAIInterviewAnswerAPIView.as_view(),
     name="submit-ai-interview-answer",
+),
+    
+    
+    path(
+    "interviews/<int:interview_id>/complete/",
+    CompleteAIInterviewAPIView.as_view(),
+    name="complete-ai-interview",
+),
+    
+    
+    
+    path(
+    "interviews/<int:interview_id>/report/",
+    AIInterviewReportAPIView.as_view(),
+    name="ai-interview-report",
 ),
 ]

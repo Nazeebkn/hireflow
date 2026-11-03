@@ -1,4 +1,3 @@
-from company_app.models import AIInterview
 from candidate_app.models import AIInterviewQuestion
 
 

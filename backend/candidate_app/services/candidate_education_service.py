@@ -1,7 +1,11 @@
-from candidate_app.repositories.candidate_profile_repository import CandidateProfileRepository
-from candidate_app.repositories.candidate_education_repository import CandidateEducationRepository
+from rest_framework.exceptions import NotFound
 
-from rest_framework.exceptions import  NotFound
+from candidate_app.repositories.candidate_education_repository import (
+    CandidateEducationRepository,
+)
+from candidate_app.repositories.candidate_profile_repository import (
+    CandidateProfileRepository,
+)
 
 
 class CandidateEducationService:

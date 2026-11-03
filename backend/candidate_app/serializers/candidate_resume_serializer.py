@@ -1,8 +1,9 @@
+import re
+
 from rest_framework import serializers
 
 from candidate_app.models import CandidateProfile
 
-import re
 
 class CandidateResumeSerializer(serializers.ModelSerializer):
 

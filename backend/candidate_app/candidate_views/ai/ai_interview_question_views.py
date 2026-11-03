@@ -1,17 +1,15 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-
-from company_app.models import AIInterview
-
-from candidate_app.services.ai.ai_interview_service import (
-    AIInterviewService,
-)
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from candidate_app.serializers.ai.ai_interview_question_serializer import (
     AIInterviewQuestionSerializer,
 )
+from candidate_app.services.ai.ai_interview_service import (
+    AIInterviewService,
+)
+from company_app.models import AIInterview
 
 
 class AIInterviewQuestionsAPIView(APIView):

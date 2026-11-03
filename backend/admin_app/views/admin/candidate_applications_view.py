@@ -1,17 +1,14 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from admin_app.permissions import IsAdminUser
-
-from admin_app.services.admin.candidate_applications_service import (
-    CandidateApplicationsService,
-)
-
 from admin_app.serializers.admin.candidate_applications_serializer import (
     CandidateApplicationSerializer,
+)
+from admin_app.services.admin.candidate_applications_service import (
+    CandidateApplicationsService,
 )
 
 

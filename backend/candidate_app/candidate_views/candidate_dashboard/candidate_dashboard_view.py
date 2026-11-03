@@ -3,12 +3,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from candidate_app.services.candidate_dashboard.candidate_dashboard_service import (
-    CandidateDashboardService,
-)
-
 from candidate_app.serializers.candidate_dashboard.candidate_dashboard_serializer import (
     CandidateDashboardSerializer,
+)
+from candidate_app.services.candidate_dashboard.candidate_dashboard_service import (
+    CandidateDashboardService,
 )
 
 

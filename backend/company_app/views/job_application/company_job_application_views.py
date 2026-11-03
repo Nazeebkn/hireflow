@@ -1,16 +1,20 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from company_app.serializers.job_application.company_job_application_serializer import (
     CompanyJobApplicationSerializer,
 )
-
 from company_app.serializers.job_application.job_application_serializer import (
     JobApplicationSerializer,
 )
-
 from company_app.services.job_application.job_application_service import (
     JobApplicationService,
+)
+from candidate_app.models import  AIInterviewReport
+from company_app.models import AIInterview
+from candidate_app.serializers.ai.ai_interview_report_serializer import (
+    AIInterviewReportSerializer,
 )
 
 
@@ -94,6 +98,88 @@ class CompanyApplicationDetailAPIView(APIView):
             return Response(
                 {
                     "message": str(error),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+            
+            
+            
+class CompanyAIInterviewReportAPIView(APIView):
+
+    def get(self, request, application_id):
+
+        try:
+
+            company = getattr(
+                request.user,
+                "company_profile",
+                None,
+            )
+
+            if not company:
+                return Response(
+                    {
+                        "message": "Company profile not found."
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            application = (
+                JobApplicationService.get_application_for_company(
+                    company=company,
+                    application_id=application_id,
+                )
+            )
+
+            interview = (
+                AIInterview.objects
+                .filter(
+                    application=application
+                )
+                .first()
+            )
+
+            if not interview:
+                return Response(
+                    {
+                        "message": "AI interview not found."
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            report = (
+                AIInterviewReport.objects
+                .filter(
+                    interview=interview
+                )
+                .first()
+            )
+
+            if not report:
+                return Response(
+                    {
+                        "message": "AI interview report not found."
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            serializer = AIInterviewReportSerializer(
+                report
+            )
+
+            return Response(
+                {
+                    "report": serializer.data
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as error:
+
+            return Response(
+                {
+                    "message": str(error)
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

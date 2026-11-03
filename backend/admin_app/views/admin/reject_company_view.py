@@ -1,18 +1,16 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from admin_app.permissions import IsAdminUser
 from admin_app.serializers.admin.reject_company_serializer import (
     RejectCompanySerializer,
 )
-
 from admin_app.services.admin.reject_company_service import (
     RejectCompanyService,
 )
 
-from rest_framework.permissions import IsAuthenticated
-
-from admin_app.permissions import IsAdminUser
 
 class RejectCompanyAPIView(APIView):
     

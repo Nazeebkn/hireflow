@@ -1,16 +1,14 @@
+from django.db import transaction
+
 from candidate_app.services.candidate_education_service import (
     CandidateEducationService,
 )
-
 from candidate_app.services.candidate_experience_service import (
     CandidateExperienceService,
 )
-
 from candidate_app.services.candidate_skill_service import (
     CandidateSkillService,
 )
-
-from django.db import transaction
 
 
 class CareerProfileCompletionService:

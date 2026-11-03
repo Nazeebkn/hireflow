@@ -1,7 +1,11 @@
 from rest_framework.exceptions import NotFound
 
-from candidate_app.repositories.candidate_profile_repository import CandidateProfileRepository
-from candidate_app.repositories.candidate_experience_repository import CandidateExperienceRepository
+from candidate_app.repositories.candidate_experience_repository import (
+    CandidateExperienceRepository,
+)
+from candidate_app.repositories.candidate_profile_repository import (
+    CandidateProfileRepository,
+)
 
 
 class CandidateExperienceService:

@@ -1,6 +1,7 @@
+import re
+
 from rest_framework import serializers
 
-import re
 
 class CareerProfileCompletionSerializer(serializers.Serializer):
 

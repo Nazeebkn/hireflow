@@ -1,11 +1,10 @@
 from rest_framework import serializers
 
-from candidate_app.serializers.candidate_profile_serializer import (
-    CandidateProfileSerializer,
-)
-
 from candidate_app.serializers.candidate_job_preference_serializer import (
     CandidateJobPreferenceSerializer,
+)
+from candidate_app.serializers.candidate_profile_serializer import (
+    CandidateProfileSerializer,
 )
 
 

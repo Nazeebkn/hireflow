@@ -80,3 +80,20 @@ class AIInterviewRepository:
                 return True
 
         return False
+    
+    
+    
+    @staticmethod
+    def complete_interview(interview):
+        interview.status = AIInterview.InterviewStatus.COMPLETED
+        interview.completed_at = timezone.now()
+
+        interview.save(
+            update_fields=[
+                "status",
+                "completed_at",
+                "updated_at",
+            ]
+        )
+
+        return interview

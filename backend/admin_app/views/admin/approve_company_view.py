@@ -1,11 +1,9 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from admin_app.permissions import IsAdminUser
-
 from admin_app.services.admin.approve_company_service import (
     ApproveCompanyService,
 )
@@ -23,6 +21,8 @@ class ApproveCompanyAPIView(APIView):
         ApproveCompanyService.approve_company(
             company_id
         )
+        
+        
 
         return Response(
             {

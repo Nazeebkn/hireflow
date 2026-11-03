@@ -1,5 +1,5 @@
-from datetime import date
 import re
+from datetime import date
 
 from PIL import Image
 from rest_framework import serializers

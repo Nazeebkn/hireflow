@@ -1,10 +1,10 @@
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import NotFound
 
-from candidate_app.repositories.candidate_profile_repository import (
-    CandidateProfileRepository,
-)
 from candidate_app.repositories.candidate_job_preference_repository import (
     CandidateJobPreferenceRepository,
+)
+from candidate_app.repositories.candidate_profile_repository import (
+    CandidateProfileRepository,
 )
 
 

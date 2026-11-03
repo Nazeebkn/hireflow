@@ -3,20 +3,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from candidate_app.services.candidate_job.candidate_job_service import (
-    CandidateJobService,
-)
 from candidate_app.serializers.candidate_job.candidate_job_serializer import (
     CandidateJobSerializer,
 )
-
-from company_app.services.job_application.job_application_service import (
-    JobApplicationService,
+from candidate_app.services.candidate_job.candidate_job_service import (
+    CandidateJobService,
 )
 from company_app.serializers.job_application.job_application_serializer import (
     JobApplicationSerializer,
 )
-
+from company_app.services.job_application.job_application_service import (
+    JobApplicationService,
+)
 
 
 class CandidateJobAPIView(APIView):

@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from company_app.serializers.profile.company_serializer import (
-    CompanySerializer,
     CompanyDetailSerializer,
+    CompanySerializer,
 )
 from company_app.services.profile.company_service import CompanyService
 

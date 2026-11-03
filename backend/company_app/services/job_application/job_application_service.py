@@ -2,12 +2,21 @@ import threading
 
 from rest_framework.exceptions import NotFound, ValidationError
 
+from candidate_app.services.ai.resume_screening_task import (
+    run_resume_screening,
+)
 from company_app.repositories.job_application.job_application_repository import (
     JobApplicationRepository,
 )
 
+from candidate_app.models import Notification
+from candidate_app.services.notification.notification_service import (
+    NotificationService,
+)
 
-
+from admin_app.services.notification.notification_service import (
+    AdminNotificationService,
+)
 
 class JobApplicationService:
 
@@ -51,6 +60,23 @@ class JobApplicationService:
                 job=job,
                 submitted_resume=candidate.resume,
             )
+        )
+        
+        NotificationService.create_notification(
+            user=job.company.user,
+            notification_type=(
+                Notification.NotificationType.NEW_CANDIDATE_APPLIED
+            ),
+            title="New Candidate Applied",
+            message=(
+                f"New candidate applied for {job.title}."
+            ),
+        )
+        
+        AdminNotificationService.notify_admins(
+            notification_type=Notification.NotificationType.NEW_JOB_APPLICATION,
+            title="New Job Application",
+            message=f"A candidate has applied for the {job.title} position.",
         )
 
         application.status = (

@@ -1,17 +1,15 @@
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
-
-from candidate_app.services.ai.resume_screening_service import (
-    ResumeScreeningService,
-)
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from candidate_app.serializers.ai.resume_screening_serializer import (
     ResumeScreeningSerializer,
 )
-
+from candidate_app.services.ai.resume_screening_service import (
+    ResumeScreeningService,
+)
 from company_app.services.job_application.job_application_service import (
     JobApplicationService,
 )

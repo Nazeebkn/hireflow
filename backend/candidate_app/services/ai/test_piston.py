@@ -1,6 +1,5 @@
 from candidate_app.services.ai.piston_service import execute_test_cases
 
-
 code = """
 def count_vowels(s):
     vowels = "aeiou"
