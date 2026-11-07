@@ -25,7 +25,9 @@ from company_app.views.notification.notification_views import (
     CompanyNotificationDeleteAPIView,
 )
 
-
+from company_app.views.hr_interview.hr_interview_views import (
+    CompanyHRInterviewScheduleAPIView,
+)
 
 urlpatterns = [
 
@@ -117,8 +119,14 @@ urlpatterns = [
     ),
     
     path(
-    "applications/<int:application_id>/ai-interview-report/",
-    CompanyAIInterviewReportAPIView.as_view(),
-    name="company-ai-interview-report",
-),
+        "applications/<int:application_id>/ai-interview-report/",
+        CompanyAIInterviewReportAPIView.as_view(),
+        name="company-ai-interview-report",
+    ),
+    
+    path(
+        "applications/<int:application_id>/hr-interview/",
+        CompanyHRInterviewScheduleAPIView.as_view(),
+        name="company-hr-interview-schedule",
+    ),
 ]

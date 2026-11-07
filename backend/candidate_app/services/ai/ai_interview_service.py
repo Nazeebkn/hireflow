@@ -593,7 +593,6 @@ class AIInterviewService:
                 "The interview is not currently in progress."
             )
 
-        # Mark interview as completed
         interview.status = AIInterview.InterviewStatus.COMPLETED
         interview.completed_at = timezone.now()
 
@@ -605,7 +604,6 @@ class AIInterviewService:
             ]
         )
 
-        # Generate interview report
         report = AIInterviewService.generate_interview_report(
             interview
         )
@@ -614,18 +612,12 @@ class AIInterviewService:
         job = application.job
         company_user = job.company.user
 
-        # -------------------------------------------------
         # UPDATE APPLICATION STATUS
-        # -------------------------------------------------
-
         if report.overall_score >= 80:
-
             application.status = (
-                application.ApplicationStatus.SELECTED
+                application.ApplicationStatus.FINAL_INTERVIEW
             )
-
         else:
-
             application.status = (
                 application.ApplicationStatus.REJECTED
             )
@@ -637,10 +629,7 @@ class AIInterviewService:
             ]
         )
 
-        # -------------------------------------------------
         # CANDIDATE NOTIFICATION - REPORT
-        # -------------------------------------------------
-
         NotificationService.create_notification(
             user=application.candidate.user,
             notification_type=(
@@ -653,44 +642,21 @@ class AIInterviewService:
             ),
         )
 
-        # -------------------------------------------------
-        # COMPANY NOTIFICATION - INTERVIEW COMPLETED
-        # -------------------------------------------------
-
-        NotificationService.create_notification(
-            user=company_user,
-            notification_type=(
-                Notification.NotificationType
-                .COMPANY_AI_INTERVIEW_COMPLETED
-            ),
-            title="AI Interview Completed",
-            message=(
-                f"The AI interview for "
-                f"{job.title} has been completed."
-            ),
-        )
-
-        # -------------------------------------------------
-        # COMPANY NOTIFICATION - SELECTED / REJECTED
-        # -------------------------------------------------
-
+        # COMPANY NOTIFICATION - AI INTERVIEW RESULT
         if report.overall_score >= 80:
-
             NotificationService.create_notification(
                 user=company_user,
                 notification_type=(
                     Notification.NotificationType
-                    .CANDIDATE_SELECTED
+                    .COMPANY_AI_INTERVIEW_COMPLETED
                 ),
-                title="Candidate Selected",
+                title="Candidate Passed AI Interview",
                 message=(
-                    f"A candidate has been selected for "
-                    f"{job.title} based on the AI interview result."
+                    f"A candidate passed the AI interview for "
+                    f"{job.title}. You can now schedule an HR interview."
                 ),
             )
-
         else:
-
             NotificationService.create_notification(
                 user=company_user,
                 notification_type=(
@@ -699,8 +665,8 @@ class AIInterviewService:
                 ),
                 title="Candidate Rejected",
                 message=(
-                    f"A candidate has been rejected for "
-                    f"{job.title} based on the AI interview result."
+                    f"A candidate did not pass the AI interview for "
+                    f"{job.title}."
                 ),
             )
 

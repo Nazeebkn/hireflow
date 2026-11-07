@@ -329,6 +329,12 @@ class Notification(models.Model):
             "AI_INTERVIEW_RESULT",
             "AI Interview Result",
         )
+        
+        HR_INTERVIEW_SCHEDULED = (
+            "HR_INTERVIEW_SCHEDULED",
+            "HR Interview Scheduled",
+        )
+
 
         # Company notifications
         NEW_CANDIDATE_APPLIED = (
