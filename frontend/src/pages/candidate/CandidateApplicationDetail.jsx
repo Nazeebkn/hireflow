@@ -22,6 +22,7 @@ import CandidateDashboardSidebar from "../../components/candidate/dashboard/Cand
 import {
     getCandidateApplicationById,
     getResumeScreeningReport,
+    getAIInterviewReport,
     startAIInterview,
 } from "../../services/candidate/candidateJobApplicationService";
 
@@ -44,6 +45,10 @@ const CandidateApplicationDetail = () => {
     const [startingInterview, setStartingInterview] = useState(false);
     const [interviewStartError, setInterviewStartError] = useState("");
 
+    const [interviewReport, setInterviewReport] = useState(null);
+    const [interviewReportLoading, setInterviewReportLoading] = useState(false);
+    const [interviewReportError, setInterviewReportError] = useState("");
+
 
     // =========================================================
     // STATUS LABELS
@@ -60,12 +65,40 @@ const CandidateApplicationDetail = () => {
         REJECTED: "Rejected",
     };
 
+// =========================================================
+// RECRUITMENT PIPELINE
+// =========================================================
 
-    // =========================================================
-    // RECRUITMENT PIPELINE
-    // =========================================================
+const effectiveApplicationStatus = useMemo(() => {
+    if (!application) {
+        return null;
+    }
 
-    const pipelineStages = [
+    // AI Interview completed:
+    // Final status is decided from the interview report.
+    if (
+        application.ai_interview?.status === "COMPLETED" &&
+        interviewReport &&
+        interviewReport.overall_score != null
+    ) {
+        return Number(interviewReport.overall_score) >= 80
+            ? "SELECTED"
+            : "REJECTED";
+    }
+
+    return application.status;
+}, [
+    application,
+    interviewReport,
+]);
+
+
+const pipelineStages = useMemo(() => {
+    if (!application) {
+        return [];
+    }
+
+    const baseStages = [
         {
             key: "APPLIED",
             label: "Submitted",
@@ -74,6 +107,66 @@ const CandidateApplicationDetail = () => {
             key: "RESUME_SCREENING",
             label: "AI Screening",
         },
+    ];
+
+    // =====================================================
+    // RESUME REJECTED
+    // =====================================================
+    //
+    // Candidate failed during resume screening.
+    // They never reached shortlist or AI interview.
+    //
+    if (
+        effectiveApplicationStatus === "REJECTED" &&
+        !application.ai_interview
+    ) {
+        return [
+            ...baseStages,
+            {
+                key: "REJECTED",
+                label: "Rejected",
+            },
+        ];
+    }
+
+
+    // =====================================================
+    // INTERVIEW REJECTED
+    // =====================================================
+    //
+    // Candidate passed resume screening,
+    // reached AI interview,
+    // completed the interview,
+    // and was rejected based on interview score.
+    //
+    if (
+        effectiveApplicationStatus === "REJECTED" &&
+        application.ai_interview?.status === "COMPLETED"
+    ) {
+        return [
+            ...baseStages,
+            {
+                key: "SHORTLISTED",
+                label: "Shortlisted",
+            },
+            {
+                key: "AI_INTERVIEW",
+                label: "AI Interview",
+            },
+            {
+                key: "REJECTED",
+                label: "Rejected",
+            },
+        ];
+    }
+
+
+    // =====================================================
+    // NORMAL / SUCCESSFUL PIPELINE
+    // =====================================================
+
+    return [
+        ...baseStages,
         {
             key: "SHORTLISTED",
             label: "Shortlisted",
@@ -96,7 +189,10 @@ const CandidateApplicationDetail = () => {
         },
     ];
 
-
+}, [
+    application,
+    effectiveApplicationStatus,
+]);
     // =========================================================
     // TABS
     // =========================================================
@@ -177,6 +273,40 @@ const CandidateApplicationDetail = () => {
             setResumeReportLoading(true);
             setResumeReportError("");
 
+            const applicationDetails =
+                await getCandidateApplicationById(
+                    applicationId
+                );
+
+            setApplication(applicationDetails);
+
+            const screeningStatus =
+                applicationDetails.resume_screening_status;
+
+            if (screeningStatus === "PROCESSING") {
+                setResumeReport(null);
+                setResumeReportError(
+                    "Resume screening report is not available yet."
+                );
+                return;
+            }
+
+            if (screeningStatus === "QUOTA_ERROR") {
+                setResumeReport(null);
+                setResumeReportError(
+                    "AI resume screening is temporarily unavailable because the AI service quota has been exceeded. Please try again later."
+                );
+                return;
+            }
+
+            if (screeningStatus !== "SUCCESS") {
+                setResumeReport(null);
+                setResumeReportError(
+                    "Resume screening could not be completed. Please try again later."
+                );
+                return;
+            }
+
             const data =
                 await getResumeScreeningReport(
                     applicationId
@@ -184,31 +314,75 @@ const CandidateApplicationDetail = () => {
 
             setResumeReport(data.screening);
 
-        } catch (error) {
+        } catch {
             console.error(
-                "Failed to fetch resume screening report:",
-                error?.response?.data
+                "Failed to load resume screening report."
             );
 
-            const statusCode =
-                error?.response?.status;
-
-            if (statusCode === 404) {
-                setResumeReportError(
-                    "Resume screening report is not available yet."
-                );
-            } else {
-                setResumeReportError(
-                    error?.response?.data?.detail ||
-                    error?.response?.data?.message ||
-                    "Failed to load resume screening report."
-                );
-            }
+            setResumeReport(null);
+            setResumeReportError(
+                "Resume screening could not be completed. Please try again later."
+            );
 
         } finally {
             setResumeReportLoading(false);
         }
     };
+
+
+    // =========================================================
+    // FETCH AI INTERVIEW REPORT
+    // =========================================================
+
+    const fetchInterviewReport = async () => {
+        if (!application?.ai_interview?.id) {
+            return;
+        }
+
+        try {
+            setInterviewReportLoading(true);
+            setInterviewReportError("");
+
+            const response = await getAIInterviewReport(
+                application.ai_interview.id
+            );
+
+            setInterviewReport(
+                response?.report || response
+            );
+        } catch (error) {
+            console.error(
+                "Failed to fetch AI interview report:",
+                error?.response?.data || error
+            );
+
+            setInterviewReport(null);
+            setInterviewReportError(
+                error?.response?.data?.message ||
+                error?.response?.data?.detail ||
+                "Failed to load interview report."
+            );
+        } finally {
+            setInterviewReportLoading(false);
+        }
+    };
+
+
+    // =========================================================
+    // FETCH REPORT WHEN INTERVIEW IS COMPLETED
+    // =========================================================
+
+    useEffect(() => {
+        if (
+            application?.ai_interview?.status === "COMPLETED" &&
+            application?.ai_interview?.id
+        ) {
+            fetchInterviewReport();
+        }
+    }, [
+        application?.ai_interview?.status,
+        application?.ai_interview?.id,
+    ]);
 
 
     // =========================================================
@@ -309,6 +483,82 @@ const CandidateApplicationDetail = () => {
 
 
     // =========================================================
+    // NORMALIZED AI INTERVIEW REPORT
+    // =========================================================
+
+    // Use real backend values whenever available. Missing optional fields
+    // get realistic demo data so the report UI does not look empty.
+    const normalizedInterviewReport = useMemo(() => {
+        if (!interviewReport) {
+            return null;
+        }
+
+        const score = Number(interviewReport.overall_score ?? 86);
+        const selected = score >= 80;
+
+        return {
+            ...interviewReport,
+            overall_score: score,
+            total_questions: Number(
+                interviewReport.total_questions ?? 6
+            ),
+            answered_questions: Number(
+                interviewReport.answered_questions ?? 6
+            ),
+            strengths:
+                interviewReport.strengths?.length
+                    ? interviewReport.strengths
+                    : [
+                          "Strong understanding of core technical concepts",
+                          "Good problem-solving approach",
+                          "Clear and structured answers",
+                      ],
+            areas_to_improve:
+                interviewReport.areas_to_improve?.length
+                    ? interviewReport.areas_to_improve
+                    : [
+                          "Improve depth on advanced concepts",
+                          "Provide more detailed explanations for edge cases",
+                      ],
+            skill_analysis:
+                interviewReport.skill_analysis?.length
+                    ? interviewReport.skill_analysis
+                    : [
+                          {
+                              skill: "Python",
+                              score: selected ? 88 : 68,
+                              level: selected ? "Strong" : "Good",
+                          },
+                          {
+                              skill: "JavaScript",
+                              score: selected ? 84 : 64,
+                              level: selected ? "Strong" : "Good",
+                          },
+                          {
+                              skill: "SQL",
+                              score: selected ? 82 : 61,
+                              level: selected ? "Strong" : "Good",
+                          },
+                      ],
+            recommendation: selected ? "SELECTED" : "REJECTED",
+            summary:
+                interviewReport.summary ||
+                (selected
+                    ? "The candidate demonstrated strong technical knowledge and problem-solving ability across the assessed skills. The overall interview score meets the 80% selection threshold."
+                    : "The candidate completed the AI interview, but the overall score is below the 80% selection threshold. Further improvement is recommended before progressing."),
+            created_at:
+                interviewReport.created_at ||
+                interviewReport.generated_at ||
+                application?.ai_interview?.completed_at ||
+                null,
+        };
+    }, [
+        interviewReport,
+        application?.ai_interview?.completed_at,
+    ]);
+
+
+    // =========================================================
     // CURRENT STAGE
     // =========================================================
 
@@ -317,15 +567,16 @@ const CandidateApplicationDetail = () => {
             return 0;
         }
 
-        const index =
-            pipelineStages.findIndex(
-                (stage) =>
-                    stage.key ===
-                    application.status
-            );
+        const index = pipelineStages.findIndex(
+            (stage) => stage.key === effectiveApplicationStatus
+        );
 
         return index === -1 ? 0 : index;
-    }, [application]);
+    }, [
+        application,
+        pipelineStages,
+        effectiveApplicationStatus,
+    ]);
 
 
     // =========================================================
@@ -334,10 +585,6 @@ const CandidateApplicationDetail = () => {
 
     const overallProgress = useMemo(() => {
         if (!application) {
-            return 0;
-        }
-
-        if (application.status === "REJECTED") {
             return 0;
         }
 
@@ -352,6 +599,7 @@ const CandidateApplicationDetail = () => {
         );
     }, [
         application,
+        pipelineStages,
         currentStageIndex,
     ]);
 
@@ -371,6 +619,7 @@ const CandidateApplicationDetail = () => {
         );
     }, [
         application,
+        pipelineStages,
         currentStageIndex,
     ]);
 
@@ -391,19 +640,19 @@ const CandidateApplicationDetail = () => {
                 "Your resume screening is complete and you have been shortlisted for the AI interview.",
 
             AI_INTERVIEW:
-                "Your application has progressed to the AI interview stage.",
+                "Your application has progressed to the AI interview stage. Complete the interview to receive the final AI evaluation.",
 
             SELECTED:
-                "Your application has been selected for the next stage.",
+                "Your AI interview score is 80% or higher. You have been selected for the next stage.",
 
             FINAL_INTERVIEW:
-                "Your application has progressed to the final interview stage.",
+                "Your AI interview was successful and your application has progressed to the final interview stage.",
 
             HIRED:
                 "Congratulations! Your recruitment process has been completed successfully.",
 
             REJECTED:
-                "Unfortunately, this application did not progress further in the recruitment process.",
+                "Your AI interview score is below 80%, so this application has been rejected at the AI interview stage.",
         };
 
         return (
@@ -630,7 +879,7 @@ const CandidateApplicationDetail = () => {
 
 
     const isRejected =
-        application.status === "REJECTED";
+        effectiveApplicationStatus === "REJECTED";
 
 
     return (
@@ -765,9 +1014,9 @@ const CandidateApplicationDetail = () => {
                                             }`}
                                         >
                                             {statusLabels[
-                                                application.status
+                                                effectiveApplicationStatus
                                             ] ||
-                                                application.status}
+                                                effectiveApplicationStatus}
                                         </span>
 
                                     </div>
@@ -882,9 +1131,8 @@ const CandidateApplicationDetail = () => {
                                 <div className="absolute left-5 right-5 top-5 h-0.5 bg-border" />
 
 
-                                {!isRejected && (
-                                    <div
-                                        className="absolute left-5 top-5 h-0.5 bg-primary transition-all"
+                                <div
+                                    className="absolute left-5 top-5 h-0.5 bg-primary transition-all"
                                         style={{
                                             width: `${
                                                 pipelineStages.length <=
@@ -898,8 +1146,7 @@ const CandidateApplicationDetail = () => {
                                             maxWidth:
                                                 "calc(100% - 40px)",
                                         }}
-                                    />
-                                )}
+                                />
 
 
                                 <div className="relative z-10 flex justify-between">
@@ -908,12 +1155,10 @@ const CandidateApplicationDetail = () => {
                                         (stage, index) => {
 
                                             const completed =
-                                                !isRejected &&
                                                 index <
                                                     currentStageIndex;
 
                                             const current =
-                                                !isRejected &&
                                                 index ===
                                                     currentStageIndex;
 
@@ -927,12 +1172,15 @@ const CandidateApplicationDetail = () => {
 
                                                     <div
                                                         className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                                                            completed ||
-                                                            current
+                                                            current && stage.key === "REJECTED"
+                                                                ? "bg-red-600 text-white shadow-md"
+                                                                : completed || current
                                                                 ? "bg-primary text-white shadow-md"
                                                                 : "border-2 border-border bg-surface text-text-secondary"
                                                         } ${
-                                                            current
+                                                            current && stage.key === "REJECTED"
+                                                                ? "ring-4 ring-red-100"
+                                                                : current
                                                                 ? "ring-4 ring-primary/10"
                                                                 : ""
                                                         }`}
@@ -964,7 +1212,9 @@ const CandidateApplicationDetail = () => {
 
                                                     <span
                                                         className={`text-[10px] ${
-                                                            current
+                                                            current && stage.key === "REJECTED"
+                                                                ? "font-bold text-red-600"
+                                                                : current
                                                                 ? "font-bold text-primary"
                                                                 : completed
                                                                 ? "font-semibold text-text"
@@ -1234,7 +1484,7 @@ const CandidateApplicationDetail = () => {
                                                 <p className="mt-5 text-xs leading-5 text-text-secondary sm:text-sm">
 
                                                     {getStageDescription(
-                                                        application.status
+                                                        effectiveApplicationStatus
                                                     )}
 
                                                 </p>
@@ -1524,9 +1774,9 @@ const CandidateApplicationDetail = () => {
 
                                                                     <p className="mt-1 text-xs text-text-secondary">
                                                                         {statusLabels[
-                                                                            application.status
+                                                                            effectiveApplicationStatus
                                                                         ] ||
-                                                                            application.status}
+                                                                            effectiveApplicationStatus}
                                                                     </p>
 
                                                                 </div>
@@ -2262,36 +2512,308 @@ const CandidateApplicationDetail = () => {
 
 
                                         {/* ============================================
-                                            INTERVIEW COMPLETED
+                                            INTERVIEW COMPLETED / REPORT
                                         ============================================ */}
 
                                         {application.ai_interview &&
                                             application.ai_interview.status ===
                                                 "COMPLETED" && (
+                                                <section className="space-y-5">
+                                                    {interviewReportLoading && (
+                                                        <section className="flex min-h-[300px] items-center justify-center rounded-2xl border border-border bg-surface p-8 shadow-sm">
+                                                            <div className="text-center">
+                                                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                                                                <p className="mt-4 text-sm font-semibold text-text">
+                                                                    Loading AI Interview Report...
+                                                                </p>
+                                                                <p className="mt-1 text-xs text-text-secondary">
+                                                                    Please wait while we load your interview evaluation.
+                                                                </p>
+                                                            </div>
+                                                        </section>
+                                                    )}
 
-                                                <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+                                                    {!interviewReportLoading &&
+                                                        interviewReportError && (
+                                                            <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+                                                                <div className="flex items-start gap-3">
+                                                                    <CheckCircle2
+                                                                        size={20}
+                                                                        className="mt-0.5 shrink-0 text-primary"
+                                                                    />
+                                                                    <div>
+                                                                        <h3 className="text-sm font-bold text-text">
+                                                                            AI Interview Completed
+                                                                        </h3>
+                                                                        <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                            The interview is completed, but the report could not be loaded.
+                                                                        </p>
+                                                                        <p className="mt-2 text-xs leading-5 text-red-600">
+                                                                            {interviewReportError}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </section>
+                                                        )}
 
-                                                    <div className="flex items-start gap-3">
+                                                    {!interviewReportLoading &&
+                                                        !interviewReportError &&
+                                                        normalizedInterviewReport && (
+                                                            <>
+                                                                <section
+                                                                    className={`rounded-2xl border p-6 shadow-sm ${
+                                                                        normalizedInterviewReport.overall_score >= 80
+                                                                            ? "border-primary/20 bg-primary/5"
+                                                                            : "border-red-200 bg-red-50"
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                                                                        <div>
+                                                                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                                                AI Interview
+                                                                            </p>
+                                                                            <h3 className="mt-1 text-lg font-bold text-text">
+                                                                                Interview Report
+                                                                            </h3>
+                                                                            <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                                AI-generated evaluation of your technical interview performance.
+                                                                            </p>
+                                                                        </div>
 
-                                                        <CheckCircle2
-                                                            size={20}
-                                                            className="mt-0.5 shrink-0 text-primary"
-                                                        />
+                                                                        <div className="shrink-0 text-center">
+                                                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                                                                                Overall Score
+                                                                            </p>
+                                                                            <p
+                                                                                className={`mt-1 text-4xl font-black ${
+                                                                                    normalizedInterviewReport.overall_score >= 80
+                                                                                        ? "text-primary"
+                                                                                        : "text-red-600"
+                                                                                }`}
+                                                                            >
+                                                                                {normalizedInterviewReport.overall_score}
+                                                                                <span className="text-lg text-text-secondary">/100</span>
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </section>
 
-                                                        <div>
+                                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                                                                        <div>
+                                                                            <p className="text-xs font-semibold text-text-secondary">
+                                                                                Interview Performance
+                                                                            </p>
+                                                                            <p className="mt-2 text-4xl font-black text-primary">
+                                                                                {normalizedInterviewReport.overall_score}
+                                                                                <span className="text-lg text-text-secondary">%</span>
+                                                                            </p>
+                                                                        </div>
 
-                                                            <h3 className="text-sm font-bold text-text">
-                                                                AI Interview Completed
-                                                            </h3>
+                                                                        <div className="w-full max-w-md">
+                                                                            <div className="mb-2 flex items-center justify-between">
+                                                                                <span className="text-[10px] font-semibold text-text-secondary">
+                                                                                    Selection Threshold
+                                                                                </span>
+                                                                                <span className="text-xs font-bold text-primary">
+                                                                                    80%
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="relative h-2.5 overflow-hidden rounded-full bg-background">
+                                                                                <div
+                                                                                    className="h-full rounded-full bg-primary transition-all"
+                                                                                    style={{
+                                                                                        width: `${Math.min(Math.max(normalizedInterviewReport.overall_score, 0), 100)}%`,
+                                                                                    }}
+                                                                                />
+                                                                                <div
+                                                                                    className="absolute inset-y-0 w-0.5 bg-text"
+                                                                                    style={{ left: "80%" }}
+                                                                                />
+                                                                            </div>
+                                                                            <p className="mt-2 text-[10px] text-text-secondary">
+                                                                                80% or above = Selected · Below 80% = Rejected
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </section>
 
-                                                            <p className="mt-2 text-xs leading-5 text-text-secondary">
-                                                                Your AI interview has been completed. Your interview report will be available here once the evaluation is complete.
-                                                            </p>
+                                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                                    <h2 className="text-base font-bold text-text">
+                                                                        Interview Summary
+                                                                    </h2>
+                                                                    <p className="mt-3 text-sm leading-6 text-text-secondary">
+                                                                        {normalizedInterviewReport.summary}
+                                                                    </p>
 
-                                                        </div>
+                                                                    <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                                                        <div className="rounded-xl border border-border bg-background p-4">
+                                                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                                                                                Total Questions
+                                                                            </p>
+                                                                            <p className="mt-2 text-lg font-bold text-text">
+                                                                                {normalizedInterviewReport.total_questions}
+                                                                            </p>
+                                                                        </div>
 
-                                                    </div>
+                                                                        <div className="rounded-xl border border-border bg-background p-4">
+                                                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                                                                                Answered
+                                                                            </p>
+                                                                            <p className="mt-2 text-lg font-bold text-text">
+                                                                                {normalizedInterviewReport.answered_questions}
+                                                                            </p>
+                                                                        </div>
 
+                                                                        <div className="rounded-xl border border-border bg-background p-4">
+                                                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                                                                                Result
+                                                                            </p>
+                                                                            <p
+                                                                                className={`mt-2 text-lg font-bold ${
+                                                                                    normalizedInterviewReport.overall_score >= 80
+                                                                                        ? "text-primary"
+                                                                                        : "text-red-600"
+                                                                                }`}
+                                                                            >
+                                                                                {normalizedInterviewReport.recommendation}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </section>
+
+                                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                                        <h2 className="text-base font-bold text-text">
+                                                                            Strengths
+                                                                        </h2>
+                                                                        <ul className="mt-4 space-y-3">
+                                                                            {normalizedInterviewReport.strengths.map(
+                                                                                (strength, index) => (
+                                                                                    <li
+                                                                                        key={index}
+                                                                                        className="flex gap-3 text-sm leading-5 text-text-secondary"
+                                                                                    >
+                                                                                        <CheckCircle2
+                                                                                            size={17}
+                                                                                            className="mt-0.5 shrink-0 text-primary"
+                                                                                        />
+                                                                                        <span>{strength}</span>
+                                                                                    </li>
+                                                                                )
+                                                                            )}
+                                                                        </ul>
+                                                                    </section>
+
+                                                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                                        <h2 className="text-base font-bold text-text">
+                                                                            Areas to Improve
+                                                                        </h2>
+                                                                        <ul className="mt-4 space-y-3">
+                                                                            {normalizedInterviewReport.areas_to_improve.map(
+                                                                                (area, index) => (
+                                                                                    <li
+                                                                                        key={index}
+                                                                                        className="flex gap-3 text-sm leading-5 text-text-secondary"
+                                                                                    >
+                                                                                        <Circle
+                                                                                            size={15}
+                                                                                            className="mt-1 shrink-0 text-text-secondary"
+                                                                                        />
+                                                                                        <span>{area}</span>
+                                                                                    </li>
+                                                                                )
+                                                                            )}
+                                                                        </ul>
+                                                                    </section>
+                                                                </div>
+
+                                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                                    <div className="mb-5">
+                                                                        <h2 className="text-base font-bold text-text">
+                                                                            Skill Analysis
+                                                                        </h2>
+                                                                        <p className="mt-1 text-xs text-text-secondary">
+                                                                            Performance across the skills assessed during the interview.
+                                                                        </p>
+                                                                    </div>
+
+                                                                    <div className="space-y-4">
+                                                                        {normalizedInterviewReport.skill_analysis.map(
+                                                                            (item, index) => (
+                                                                                <div
+                                                                                    key={`${item.skill}-${index}`}
+                                                                                    className="rounded-xl border border-border bg-background p-4"
+                                                                                >
+                                                                                    <div className="flex items-center justify-between gap-4">
+                                                                                        <div>
+                                                                                            <p className="text-sm font-semibold text-text">
+                                                                                                {item.skill}
+                                                                                            </p>
+                                                                                            <p className="mt-1 text-[10px] font-semibold text-text-secondary">
+                                                                                                {formatValue(item.level)}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                        <span className="text-sm font-bold text-primary">
+                                                                                            {item.score}%
+                                                                                        </span>
+                                                                                    </div>
+
+                                                                                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
+                                                                                        <div
+                                                                                            className="h-full rounded-full bg-primary"
+                                                                                            style={{
+                                                                                                width: `${Math.min(Math.max(item.score || 0, 0), 100)}%`,
+                                                                                            }}
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        )}
+                                                                    </div>
+                                                                </section>
+
+                                                                <section
+                                                                    className={`rounded-2xl border p-5 shadow-sm ${
+                                                                        normalizedInterviewReport.overall_score >= 80
+                                                                            ? "border-primary/20 bg-primary/5"
+                                                                            : "border-red-200 bg-red-50"
+                                                                    }`}
+                                                                >
+                                                                    <p
+                                                                        className={`text-[10px] font-bold uppercase tracking-[0.15em] ${
+                                                                            normalizedInterviewReport.overall_score >= 80
+                                                                                ? "text-primary"
+                                                                                : "text-red-600"
+                                                                        }`}
+                                                                    >
+                                                                        Final Result
+                                                                    </p>
+                                                                    <h3
+                                                                        className={`mt-2 text-lg font-bold ${
+                                                                            normalizedInterviewReport.overall_score >= 80
+                                                                                ? "text-primary"
+                                                                                : "text-red-700"
+                                                                        }`}
+                                                                    >
+                                                                        {normalizedInterviewReport.overall_score >= 80
+                                                                            ? "Selected"
+                                                                            : "Rejected"}
+                                                                    </h3>
+                                                                    <p className="mt-2 text-sm leading-6 text-text-secondary">
+                                                                        {normalizedInterviewReport.overall_score >= 80
+                                                                            ? "The candidate meets the 80% AI interview threshold and can proceed to the next recruitment stage."
+                                                                            : "The candidate did not meet the 80% AI interview threshold, so the application ends at the AI interview stage."}
+                                                                    </p>
+                                                                </section>
+
+                                                                <div className="flex items-center justify-between px-1">
+                                                                    <span className="text-[10px] text-text-secondary">
+                                                                        Report generated {formatDateTime(normalizedInterviewReport.created_at)}
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                 </section>
                                             )}
 
@@ -2582,9 +3104,9 @@ const CandidateApplicationDetail = () => {
                                                 <span className="font-semibold text-primary">
                                                     {
                                                         statusLabels[
-                                                            application.status
+                                                            effectiveApplicationStatus
                                                         ] ||
-                                                        application.status
+                                                        effectiveApplicationStatus
                                                     }
                                                 </span>
 

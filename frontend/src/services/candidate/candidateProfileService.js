@@ -35,9 +35,10 @@ export const getCandidateProfile = async () => {
 };
 
 
-export const completeCandidateProfile = async () => {
+export const completeCandidateProfile = async (data) => {
   const response = await api.patch(
-    "/candidate/profile-completion/complete/"
+    "/candidate/profile/completion/",
+    data
   );
 
   return response.data;

@@ -10,6 +10,7 @@ import CompanyDetails from "../pages/admin/CompanyDetails";
 import Candidates from "../pages/admin/Candidates";
 import CandidateDetails from "../pages/admin/CandidateDetails";
 import CandidateApplicationWorkspace from "../pages/admin/CandidateApplicationWorkspace";
+import AdminJobDetails from "../pages/admin/AdminJobDetails";
 
 function AdminRoutes() {
   return (
@@ -58,7 +59,13 @@ function AdminRoutes() {
         path="candidates/:candidateId/applications"
         element={<CandidateApplicationWorkspace />}
       />
-    </Route>
+
+      <Route
+        path="/admin/companies/:companyId/jobs/:jobId"
+        element={<AdminJobDetails />}
+      />
+
+    </Route>  
   );
 }
 

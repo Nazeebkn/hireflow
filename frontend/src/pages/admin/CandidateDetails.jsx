@@ -89,6 +89,7 @@ const [applicationStats, setApplicationStats] = useState({
 
   const [suspending, setSuspending] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [toast, setToast] = useState(null);
 
 
   /* =====================================================
@@ -172,35 +173,48 @@ const fetchCandidateApplications = async () => {
     fetchCandidateApplications();
   }, [candidateId]);
 
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
 
   /* =====================================================
      SUSPEND
   ===================================================== */
 
-  const handleSuspend = async () => {
+  const handleSuspend = async (reason) => {
     if (!candidate?.user) {
-      alert("Candidate user ID not found.");
+      setToast({
+        message: "Candidate user ID not found.",
+        type: "error",
+      });
       return;
     }
 
     try {
       setSuspending(true);
 
-      await suspendCandidate(candidate.user);
+      await suspendCandidate(candidate.user, reason);
 
       setShowSuspendModal(false);
-
       await fetchCandidateDetails();
-    } catch (error) {
-      console.error(
-        "Failed to suspend candidate:",
-        error
-      );
 
-      alert(
-        error?.response?.data?.message ||
-          "Failed to suspend candidate."
-      );
+      setToast({
+        message: "Candidate suspended successfully.",
+        type: "success",
+      });
+    } catch (error) {
+      console.error("Failed to suspend candidate:", error);
+
+      setToast({
+        message:
+          error?.response?.data?.message ||
+          "Failed to suspend candidate.",
+        type: "error",
+      });
     } finally {
       setSuspending(false);
     }
@@ -213,7 +227,10 @@ const fetchCandidateApplications = async () => {
 
   const handleActivate = async () => {
     if (!candidate?.user) {
-      alert("Candidate user ID not found.");
+      setToast({
+        message: "Candidate user ID not found.",
+        type: "error",
+      });
       return;
     }
 
@@ -221,18 +238,21 @@ const fetchCandidateApplications = async () => {
       setActivating(true);
 
       await activateCandidate(candidate.user);
-
       await fetchCandidateDetails();
-    } catch (error) {
-      console.error(
-        "Failed to activate candidate:",
-        error
-      );
 
-      alert(
-        error?.response?.data?.message ||
-          "Failed to activate candidate."
-      );
+      setToast({
+        message: "Candidate activated successfully.",
+        type: "success",
+      });
+    } catch (error) {
+      console.error("Failed to activate candidate:", error);
+
+      setToast({
+        message:
+          error?.response?.data?.message ||
+          "Failed to activate candidate.",
+        type: "error",
+      });
     } finally {
       setActivating(false);
     }
@@ -869,6 +889,19 @@ const fetchCandidateApplications = async () => {
         />
       )}
 
+      {toast && (
+        <div
+          role="status"
+          className={`fixed right-5 top-24 z-[200] max-w-sm rounded-xl border bg-white px-4 py-3 text-sm font-medium shadow-lg ${
+            toast.type === "success"
+              ? "border-emerald-200 text-emerald-700"
+              : "border-red-200 text-red-600"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
     </AdminPageShell>
   );
 }
@@ -986,36 +1019,42 @@ function ConfirmModal({
   onCancel,
   onConfirm,
 }) {
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
+
+  const handleConfirm = () => {
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason) {
+      setReasonError("Suspension reason is required.");
+      return;
+    }
+
+    if (trimmedReason.length > 1000) {
+      setReasonError("Reason cannot exceed 1000 characters.");
+      return;
+    }
+
+    onConfirm(trimmedReason);
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
-
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-
-
         {/* HEADER */}
-
         <div className="flex items-start justify-between border-b border-border px-6 py-5">
-
           <div className="flex items-center gap-3">
-
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-100 text-red-600">
               <Ban size={20} />
             </div>
 
             <div>
-
-              <h2 className="font-bold text-text">
-                Suspend Candidate
-              </h2>
-
+              <h2 className="font-bold text-text">Suspend Candidate</h2>
               <p className="mt-0.5 text-xs text-text-secondary">
                 Account access restriction
               </p>
-
             </div>
-
           </div>
-
 
           <button
             type="button"
@@ -1025,36 +1064,50 @@ function ConfirmModal({
           >
             <X size={17} />
           </button>
-
         </div>
 
-
         {/* BODY */}
-
         <div className="p-6">
-
           <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-
             <p className="text-sm leading-6 text-red-700">
-
               Are you sure you want to suspend{" "}
-
-              <span className="font-bold">
-                {candidateName}
-              </span>
-
-              ? The candidate will no longer be able
-              to log in until the account is reactivated.
-
+              <span className="font-bold">{candidateName}</span>?
+              The candidate will no longer be able to log in until the account
+              is reactivated.
             </p>
-
           </div>
 
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-semibold text-text">
+              Reason for suspension
+              <span className="ml-1 text-red-500">*</span>
+            </label>
+
+            <textarea
+              value={reason}
+              onChange={(event) => {
+                setReason(event.target.value);
+                setReasonError("");
+              }}
+              placeholder="Enter the reason for suspending this candidate..."
+              rows={4}
+              maxLength={1000}
+              disabled={loading}
+              className="w-full resize-none rounded-xl border border-border px-4 py-3 text-sm text-text outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:opacity-60"
+            />
+
+            <div className="mt-1 flex justify-between">
+              {reasonError && (
+                <p className="text-xs text-red-600">{reasonError}</p>
+              )}
+              <span className="ml-auto text-xs text-text-secondary">
+                {reason.length}/1000
+              </span>
+            </div>
+          </div>
 
           {/* ACTIONS */}
-
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
             <button
               type="button"
               onClick={onCancel}
@@ -1064,14 +1117,12 @@ function ConfirmModal({
               Cancel
             </button>
 
-
             <button
               type="button"
-              onClick={onConfirm}
+              onClick={handleConfirm}
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-
               {loading ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -1083,15 +1134,10 @@ function ConfirmModal({
                   Suspend
                 </>
               )}
-
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }

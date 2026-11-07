@@ -28,6 +28,32 @@ function CandidateJobPreview({ job }) {
 
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
   const [showApplySuccess, setShowApplySuccess] = useState(false);
+  const [answers, setAnswers] = useState({});
+
+  const questions = Array.isArray(job?.questions) ? job.questions : [];
+
+  const initializeAnswers = () => {
+    const initialAnswers = {};
+
+    questions.forEach((question) => {
+      if (question.question_type === "YES_NO") {
+        initialAnswers[question.id] = null;
+      } else if (question.question_type === "MULTIPLE_CHOICE") {
+        initialAnswers[question.id] = [];
+      } else {
+        initialAnswers[question.id] = "";
+      }
+    });
+
+    setAnswers(initialAnswers);
+  };
+
+  const updateAnswer = (questionId, value) => {
+    setAnswers((previous) => ({
+      ...previous,
+      [questionId]: value,
+    }));
+  };
 
   /*
    * Check whether the candidate has already
@@ -78,6 +104,7 @@ function CandidateJobPreview({ job }) {
     }
 
     setApplyError("");
+    initializeAnswers();
     setShowApplyConfirm(true);
   };
 
@@ -93,7 +120,40 @@ function CandidateJobPreview({ job }) {
       setApplying(true);
       setApplyError("");
 
-      await applyForJob(job.id);
+      const missingQuestion = questions.find((question) => {
+        const answer = answers[question.id];
+
+        if (question.question_type === "YES_NO") {
+          return answer !== true && answer !== false;
+        }
+
+        if (question.question_type === "MULTIPLE_CHOICE") {
+          return !Array.isArray(answer) || answer.length === 0;
+        }
+
+        if (question.question_type === "NUMBER") {
+          return (
+            answer === "" ||
+            answer === null ||
+            answer === undefined ||
+            !Number.isFinite(Number(answer))
+          );
+        }
+
+        return typeof answer !== "string" || !answer.trim();
+      });
+
+      if (missingQuestion) {
+        setApplyError(`Please answer: ${missingQuestion.question_text}`);
+        return;
+      }
+
+      const submittedAnswers = questions.map((question) => ({
+        question_id: question.id,
+        answer: answers[question.id],
+      }));
+
+      await applyForJob(job.id, submittedAnswers);
 
       setApplied(true);
       setShowApplyConfirm(false);
@@ -480,7 +540,7 @@ function CandidateJobPreview({ job }) {
       {showApplyConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
 
-          <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl">
 
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
@@ -579,6 +639,109 @@ function CandidateJobPreview({ job }) {
 
             </div>
 
+            {/* Application Questions */}
+            {questions.length > 0 && (
+              <section className="mt-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-text">
+                    Application Questions
+                  </h3>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Please answer all questions before submitting.
+                  </p>
+                </div>
+
+                {questions.map((question, index) => (
+                  <div
+                    key={question.id}
+                    className="rounded-xl border border-border bg-background p-4"
+                  >
+                    <p className="mb-3 text-sm font-semibold text-text">
+                      {index + 1}. {question.question_text}
+                      <span className="ml-1 text-red-500">*</span>
+                    </p>
+
+                    {question.question_type === "SHORT_TEXT" && (
+                      <textarea
+                        value={answers[question.id] ?? ""}
+                        onChange={(event) =>
+                          updateAnswer(question.id, event.target.value)
+                        }
+                        rows={3}
+                        placeholder="Type your answer"
+                        disabled={applying}
+                        className="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    )}
+
+                    {question.question_type === "NUMBER" && (
+                      <input
+                        type="number"
+                        value={answers[question.id] ?? ""}
+                        onChange={(event) =>
+                          updateAnswer(question.id, event.target.value)
+                        }
+                        placeholder="Enter a number"
+                        disabled={applying}
+                        className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    )}
+
+                    {question.question_type === "YES_NO" && (
+                      <div className="flex flex-wrap gap-3">
+                        {[{ label: "Yes", value: true }, { label: "No", value: false }].map((option) => (
+                          <label
+                            key={option.label}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text"
+                          >
+                            <input
+                              type="radio"
+                              name={`question-${question.id}`}
+                              checked={answers[question.id] === option.value}
+                              onChange={() => updateAnswer(question.id, option.value)}
+                              disabled={applying}
+                              className="accent-primary"
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {question.question_type === "MULTIPLE_CHOICE" && (
+                      <div className="space-y-2">
+                        {(question.options || []).map((option) => {
+                          const selected = answers[question.id] || [];
+
+                          return (
+                            <label
+                              key={option}
+                              className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected.includes(option)}
+                                disabled={applying}
+                                onChange={(event) => {
+                                  const next = event.target.checked
+                                    ? [...selected, option]
+                                    : selected.filter((item) => item !== option);
+
+                                  updateAnswer(question.id, next);
+                                }}
+                                className="h-4 w-4 accent-primary"
+                              />
+                              {option}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
+
             {/* Error */}
             {applyError && (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
@@ -608,7 +771,9 @@ function CandidateJobPreview({ job }) {
               >
                 {applying
                   ? "Submitting..."
-                  : "Confirm Apply"}
+                  : questions.length > 0
+                    ? "Submit Application"
+                    : "Confirm Apply"}
               </button>
 
             </div>

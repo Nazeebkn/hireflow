@@ -1,8 +1,11 @@
 import api from "../api";
 
-export const applyForJob = async (jobId) => {
+export const applyForJob = async (jobId, answers = []) => {
     const response = await api.post(
-        `/candidate/jobs/${jobId}/apply/`
+        `/candidate/jobs/${jobId}/apply/`,
+        {
+            answers,
+        }
     );
 
     return response.data;
@@ -45,6 +48,17 @@ export const getResumeScreeningReport = async (
 export const startAIInterview = async (interviewId) => {
     const response = await api.post(
         `/candidate/interviews/${interviewId}/start/`
+    );
+
+    return response.data;
+};
+
+
+
+// AI Interview Report
+export const getAIInterviewReport = async (interviewId) => {
+    const response = await api.get(
+        `/candidate/interviews/${interviewId}/report/`
     );
 
     return response.data;

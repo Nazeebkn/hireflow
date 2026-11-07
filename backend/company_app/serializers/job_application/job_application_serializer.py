@@ -1,7 +1,46 @@
 from rest_framework import serializers
 
-from company_app.models import Job, JobApplication
 from candidate_app.models import AIInterviewReport
+from company_app.models import (
+    Job,
+    JobApplication,
+    ApplicationAnswer,
+)
+
+
+
+class ApplicationAnswerSerializer(serializers.ModelSerializer):
+
+    question_text = serializers.CharField(
+        source="question_text_snapshot",
+        read_only=True,
+    )
+
+    question_type = serializers.CharField(
+        source="question_type_snapshot",
+        read_only=True,
+    )
+
+    options = serializers.JSONField(
+        source="options_snapshot",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ApplicationAnswer
+        fields = (
+            "id",
+            "question_text",
+            "question_type",
+            "options",
+            "answer",
+            "created_at",
+        )
+        read_only_fields = fields
+
+
+
+
 
 
 class JobApplicationSerializer(serializers.ModelSerializer):
@@ -25,6 +64,11 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     resume_report = serializers.SerializerMethodField()
 
     interview_report = serializers.SerializerMethodField()
+    
+    answers = ApplicationAnswerSerializer(
+        many=True,
+        read_only=True,
+    )
 
     resume_screening_status = serializers.SerializerMethodField()
 
@@ -58,6 +102,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 
             "resume_report",
             "interview_report",
+            "answers", 
 
             "resume_screening_error",
             "resume_screening_status",
@@ -82,6 +127,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             "ai_interview",
             "resume_report",
             "interview_report",
+            "answers", 
 
             "resume_screening_error",
             "resume_screening_status",

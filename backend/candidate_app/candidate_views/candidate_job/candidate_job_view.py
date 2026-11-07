@@ -70,9 +70,12 @@ class CandidateJobApplicationAPIView(APIView):
             None,
         )
 
+        answers = request.data.get("answers", [])
+
         application = JobApplicationService.apply_for_job(
             candidate=candidate,
             job_id=job_id,
+            answers=answers,
         )
 
         serializer = JobApplicationSerializer(
@@ -86,6 +89,8 @@ class CandidateJobApplicationAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
 
 
 class CandidateApplicationsAPIView(APIView):

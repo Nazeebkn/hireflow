@@ -4,6 +4,9 @@ from company_app.models import (
     ApprovalStatus,
     Company,
 )
+from django.conf import settings
+
+from django.core.mail import send_mail
 
 
 class CompanyListRepository:
@@ -13,6 +16,7 @@ class CompanyListRepository:
         search=None,
         status=None,
         page=1,
+        
     ):
 
         queryset = (
@@ -46,7 +50,7 @@ class CompanyListRepository:
                 )
 
             elif status == "SUSPENDED":
-
+                
                 queryset = queryset.filter(
                     user__is_active=False
                 )

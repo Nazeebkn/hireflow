@@ -24,6 +24,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     email_verified = models.BooleanField(default=False)
     
     is_active = models.BooleanField(default=True)
+    
+    suspension_reason = models.TextField(
+        blank=True,
+        null=True,
+    )
+        
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

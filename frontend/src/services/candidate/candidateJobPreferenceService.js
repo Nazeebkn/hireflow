@@ -2,7 +2,7 @@ import api from "../api";
 
 export const createJobPreference = async (data) => {
   const response = await api.post(
-    "/candidate/job-preference/",
+    "/candidate/profile/job-preference/",
     data
   );
 
@@ -11,7 +11,7 @@ export const createJobPreference = async (data) => {
 
 export const getJobPreference = async () => {
   const response = await api.get(
-    "/candidate/job-preference/"
+    "/candidate/profile/job-preference/"
   );
 
   return response.data;
@@ -19,7 +19,7 @@ export const getJobPreference = async () => {
 
 export const updateJobPreference = async (data) => {
   const response = await api.put(
-    "/candidate/job-preference/",
+    "/candidate/profile/job-preference/",
     data
   );
 

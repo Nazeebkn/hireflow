@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -15,8 +16,27 @@ import LoginCard from "../../components/auth/LoginCard";
 
 import { login, googleLogin } from "../../services/authService";
 
+// Save authentication data consistently
+const saveAuthData = (data, rememberMe) => {
+  const keys = ["accessToken", "refreshToken", "user"];
+
+  // Clear stale authentication data
+  keys.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+
+  // Save new authentication data
+  const storage = rememberMe ? localStorage : sessionStorage;
+
+  storage.setItem("accessToken", data.access);
+  storage.setItem("refreshToken", data.refresh);
+  storage.setItem("user", JSON.stringify(data.user));
+};
+
 function Login() {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -43,6 +63,33 @@ function Login() {
     return !newErrors.email && !newErrors.password;
   };
 
+  const redirectUser = (user) => {
+    setRedirecting(true);
+
+    setTimeout(() => {
+      if (user.role === "CANDIDATE") {
+        if (!user.profile_completed) {
+          navigate("/candidate/profile-completion");
+        } else {
+          navigate("/candidate/dashboard");
+        }
+      } else if (user.role === "COMPANY") {
+        if (!user.profile_completed) {
+          navigate("/company/profile-completion");
+        } else if (user.approval_status === "PENDING") {
+          navigate("/company/pending-approval");
+        } else if (user.approval_status === "APPROVED") {
+          navigate("/company/dashboard");
+        } else if (user.approval_status === "REJECTED") {
+          navigate("/company/rejected");
+        }
+      } else if (user.role === "ADMIN") {
+        navigate("/admin/dashboard");
+      }
+    }, 1000);
+  };
+
+  // Normal Email Login
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -57,51 +104,24 @@ function Login() {
 
       console.log("LOGIN USER DATA:", data.user);
 
-      const storage = rememberMe ? localStorage : sessionStorage;
-
-      storage.setItem("accessToken", data.access);
-      storage.setItem("refreshToken", data.refresh);
-      storage.setItem("user", JSON.stringify(data.user));
+      saveAuthData(data, rememberMe);
 
       toast.success(data.message);
 
-      setRedirecting(true);
-
-      setTimeout(() => {
-        if (data.user.role === "CANDIDATE") {
-          if (!data.user.profile_completed) {
-            navigate("/candidate/profile-completion");
-          } else {
-            navigate("/candidate/dashboard");
-          }
-        } else if (data.user.role === "COMPANY") {
-          if (!data.user.profile_completed) {
-            navigate("/company/profile-completion");
-          } else if (data.user.approval_status === "PENDING") {
-            navigate("/company/pending-approval");
-          } else if (data.user.approval_status === "APPROVED") {
-            navigate("/company/dashboard");
-          } else if (data.user.approval_status === "REJECTED") {
-            navigate("/company/rejected");
-          }
-        } else if (data.user.role === "ADMIN") {
-          navigate("/admin/dashboard");
-        }
-      }, 1000);
+      redirectUser(data.user);
     } catch (error) {
-  const data = error.response?.data;
+      const responseData = error.response?.data;
 
-  const message =
-    data?.message ||
-    data?.detail ||
-    data?.non_field_errors?.[0] ||
-    data?.email?.[0] ||
-    data?.password?.[0] ||
-    "Invalid email or password.";
+      const message =
+        responseData?.message ||
+        responseData?.detail ||
+        responseData?.non_field_errors?.[0] ||
+        responseData?.email?.[0] ||
+        responseData?.password?.[0] ||
+        "Invalid email or password.";
 
-  toast.error(message);
-}
-     finally {
+      toast.error(message);
+    } finally {
       setLoading(false);
     }
   };
@@ -109,6 +129,7 @@ function Login() {
   if (redirecting) {
     return <FullScreenLoader title="Setting up your workspace..." />;
   }
+
   return (
     <div className="flex min-h-screen bg-background">
       <BrandingPanel />
@@ -124,7 +145,9 @@ function Login() {
           />
 
           {errors.email && (
-            <p className="text-sm text-red-500 -mt-3">{errors.email}</p>
+            <p className="text-sm text-red-500 -mt-3">
+              {errors.email}
+            </p>
           )}
 
           <PasswordInput
@@ -135,7 +158,9 @@ function Login() {
           />
 
           {errors.password && (
-            <p className="text-sm text-red-500 -mt-3">{errors.password}</p>
+            <p className="text-sm text-red-500 -mt-3">
+              {errors.password}
+            </p>
           )}
 
           <div className="flex items-center justify-between">
@@ -170,52 +195,34 @@ function Login() {
             <div className="flex-grow border-t border-border"></div>
           </div>
 
+          {/* Google Login */}
           <GoogleLogin
             onSuccess={async (credentialResponse) => {
               try {
                 setLoading(true);
 
-                const data = await googleLogin(credentialResponse.credential);
+                if (!credentialResponse.credential) {
+                  throw new Error("Google credential not received.");
+                }
 
-                const storage = rememberMe ? localStorage : sessionStorage;
+                const data = await googleLogin(
+                  credentialResponse.credential
+                );
 
-                storage.setItem("accessToken", data.access);
-                storage.setItem("refreshToken", data.refresh);
-                storage.setItem("user", JSON.stringify(data.user));
+                saveAuthData(data, rememberMe);
 
                 toast.success(data.message);
 
-                setRedirecting(true);
-
-                setTimeout(() => {
-                  if (data.user.role === "CANDIDATE") {
-                    if (!data.user.profile_completed) {
-                      navigate("/candidate/profile-completion");
-                    } else {
-                      navigate("/candidate/dashboard");
-                    }
-                  } else if (data.user.role === "COMPANY") {
-                    if (!data.user.profile_completed) {
-                      navigate("/company/profile-completion");
-                    } else if (data.user.approval_status === "PENDING") {
-                      navigate("/company/pending-approval");
-                    } else if (data.user.approval_status === "APPROVED") {
-                      navigate("/company/dashboard");
-                    } else if (data.user.approval_status === "REJECTED") {
-                      navigate("/company/rejected");
-                    }
-                  } else if (data.user.role === "ADMIN") {
-                    navigate("/admin/dashboard");
-                  }
-                }, 800);
+                redirectUser(data.user);
               } catch (error) {
-                const data = error.response?.data;
+                const responseData = error.response?.data;
 
                 const message =
-                  data?.message ||
-                  data?.detail ||
-                  data?.non_field_errors?.[0] ||
-                  data?.token?.[0] ||
+                  responseData?.message ||
+                  responseData?.detail ||
+                  responseData?.non_field_errors?.[0] ||
+                  responseData?.token?.[0] ||
+                  error.message ||
                   "Google Login Failed.";
 
                 toast.error(message);

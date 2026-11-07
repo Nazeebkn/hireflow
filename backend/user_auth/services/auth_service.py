@@ -111,7 +111,7 @@ class AuthService:
 
         if not db_user.is_active:
             raise serializers.ValidationError({
-                "message": "Your account has been suspended. Please contact the administrator."
+                "message": "Your account has been suspended. Please check your email for more details."
             })
 
         if (
@@ -266,6 +266,11 @@ class AuthService:
         if not user:
             raise serializers.ValidationError({
                 "message": "Account not found. Please sign up using Google first."
+            })
+
+        if not user.is_active:
+            raise serializers.ValidationError({
+                "message": "Your account has been suspended. Please check your email for more details."
             })
 
         refresh = RefreshToken.for_user(user)

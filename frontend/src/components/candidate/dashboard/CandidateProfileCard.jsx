@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ArrowRight,
   Clock3,
@@ -6,13 +6,79 @@ import {
   Globe,
   MapPin,
   UserRound,
+  Upload,
+  LoaderCircle,
+  CheckCircle2,
+  CircleAlert,
 } from "lucide-react";
+import { uploadResume } from "../../../services/candidate/resumeService";
 
-function CandidateProfileCard({ profile, loading = false }) {
+function CandidateProfileCard({
+  profile,
+  loading = false,
+  onResumeUpdated,
+}) {
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeMessage, setResumeMessage] = useState("");
+  const [resumeError, setResumeError] = useState("");
+  const fileInputRef = useRef(null);
 
   const handleComingSoon = () => {
     setShowComingSoon(true);
+  };
+
+  const handleResumeUpload = async (event) => {
+    const file = event.target.files?.[0];
+
+    // Allow selecting the same file again.
+    event.target.value = "";
+
+    if (!file) return;
+
+    setResumeMessage("");
+    setResumeError("");
+
+    const allowedExtensions = /\.(pdf|doc|docx)$/i;
+
+    if (!allowedExtensions.test(file.name)) {
+      setResumeError("Please select a PDF, DOC, or DOCX file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setResumeError("Resume file size must not exceed 5 MB.");
+      return;
+    }
+
+    try {
+      setResumeUploading(true);
+
+      await uploadResume(file);
+
+      setResumeMessage("Resume uploaded successfully.");
+
+      // Refresh dashboard data if the parent provides a callback.
+      if (onResumeUpdated) {
+        await onResumeUpdated();
+      }
+    } catch (error) {
+      const data = error.response?.data;
+
+      const message =
+        data?.resume?.[0] ||
+        data?.message ||
+        data?.detail ||
+        "Unable to upload resume. Please try again.";
+
+      setResumeError(
+        typeof message === "string"
+          ? message
+          : "Unable to upload resume. Please try again."
+      );
+    } finally {
+      setResumeUploading(false);
+    }
   };
 
   if (loading) {
@@ -26,7 +92,6 @@ function CandidateProfileCard({ profile, loading = false }) {
         <div className="space-y-5 p-6">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 animate-pulse rounded-2xl bg-slate-100" />
-
             <div className="space-y-2">
               <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
               <div className="h-4 w-52 animate-pulse rounded bg-slate-100" />
@@ -54,7 +119,6 @@ function CandidateProfileCard({ profile, loading = false }) {
             <h2 className="text-lg font-semibold text-text">
               Profile Overview
             </h2>
-
             <p className="mt-1 text-sm text-text-secondary">
               Your professional profile information.
             </p>
@@ -86,9 +150,7 @@ function CandidateProfileCard({ profile, loading = false }) {
         </div>
 
         {showComingSoon && (
-          <ComingSoonModal
-            onClose={() => setShowComingSoon(false)}
-          />
+          <ComingSoonModal onClose={() => setShowComingSoon(false)} />
         )}
       </>
     );
@@ -97,14 +159,12 @@ function CandidateProfileCard({ profile, loading = false }) {
   return (
     <>
       <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-
         {/* Header */}
         <div className="flex flex-col gap-4 border-b border-border px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-text">
               Profile Overview
             </h2>
-
             <p className="mt-1 text-sm text-text-secondary">
               Your professional profile information.
             </p>
@@ -122,7 +182,6 @@ function CandidateProfileCard({ profile, loading = false }) {
 
         {/* Profile Content */}
         <div className="p-6">
-
           {/* Candidate Identity */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">
@@ -143,8 +202,7 @@ function CandidateProfileCard({ profile, loading = false }) {
               </h3>
 
               <p className="mt-1 text-sm text-text-secondary">
-                {profile.headline ||
-                  "Professional headline not added"}
+                {profile.headline || "Professional headline not added"}
               </p>
 
               {profile.location && (
@@ -158,38 +216,30 @@ function CandidateProfileCard({ profile, loading = false }) {
 
           {/* Basic Information */}
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-
-            {/* Phone */}
             <div className="rounded-xl border border-border bg-background px-4 py-3">
               <p className="text-xs font-medium text-text-secondary">
                 Phone Number
               </p>
-
               <p className="mt-1 truncate text-sm font-semibold text-text">
                 {profile.phone_number || "-"}
               </p>
             </div>
 
-            {/* Gender */}
             <div className="rounded-xl border border-border bg-background px-4 py-3">
               <p className="text-xs font-medium text-text-secondary">
                 Gender
               </p>
-
               <p className="mt-1 text-sm font-semibold text-text">
                 {profile.gender || "-"}
               </p>
             </div>
 
-            {/* LinkedIn */}
             <div className="rounded-xl border border-border bg-background px-4 py-3">
               <p className="text-xs font-medium text-text-secondary">
                 LinkedIn
               </p>
-
               <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-text">
                 <Globe size={16} />
-
                 {profile.linkedin_url ? (
                   <a
                     href={profile.linkedin_url}
@@ -205,15 +255,12 @@ function CandidateProfileCard({ profile, loading = false }) {
               </div>
             </div>
 
-            {/* GitHub */}
             <div className="rounded-xl border border-border bg-background px-4 py-3">
               <p className="text-xs font-medium text-text-secondary">
                 GitHub
               </p>
-
               <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-text">
                 <Globe size={16} />
-
                 {profile.github_url ? (
                   <a
                     href={profile.github_url}
@@ -235,10 +282,8 @@ function CandidateProfileCard({ profile, loading = false }) {
             <p className="text-xs font-medium text-text-secondary">
               Portfolio
             </p>
-
             <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-text">
               <Globe size={15} />
-
               {profile.portfolio_url ? (
                 <a
                   href={profile.portfolio_url}
@@ -256,10 +301,7 @@ function CandidateProfileCard({ profile, loading = false }) {
 
           {/* About */}
           <div className="mt-3 rounded-xl border border-border bg-background px-4 py-4">
-            <p className="text-xs font-medium text-text-secondary">
-              About
-            </p>
-
+            <p className="text-xs font-medium text-text-secondary">About</p>
             <p className="mt-2 text-sm leading-6 text-text">
               {profile.about ||
                 "Add a professional summary to help companies understand your background and experience."}
@@ -268,45 +310,72 @@ function CandidateProfileCard({ profile, loading = false }) {
 
           {/* Resume */}
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-background px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <FileText size={18} />
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-text">
-                  Resume
-                </p>
-
+                <p className="text-sm font-semibold text-text">Resume</p>
                 <p className="text-xs text-text-secondary">
-                  {profile.resume
-                    ? "Resume uploaded"
-                    : "No resume uploaded"}
+                  {profile.resume ? "Resume uploaded" : "No resume uploaded"}
                 </p>
               </div>
             </div>
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              onChange={handleResumeUpload}
+              disabled={resumeUploading}
+            />
+
             <button
               type="button"
-              onClick={handleComingSoon}
-              className="text-sm font-medium text-primary hover:underline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={resumeUploading}
+              className="inline-flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {profile.resume
-                ? "Update Resume"
-                : "Upload Resume"}
+              {resumeUploading ? (
+                <>
+                  <LoaderCircle size={16} className="animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} />
+                  {profile.resume ? "Update Resume" : "Upload Resume"}
+                </>
+              )}
             </button>
-
           </div>
 
+          {resumeMessage && (
+            <p
+              role="status"
+              className="mt-3 flex items-center gap-2 text-sm text-emerald-600"
+            >
+              <CheckCircle2 size={16} />
+              {resumeMessage}
+            </p>
+          )}
+
+          {resumeError && (
+            <p
+              role="alert"
+              className="mt-3 flex items-center gap-2 text-sm text-red-600"
+            >
+              <CircleAlert size={16} />
+              {resumeError}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Coming Soon Modal */}
       {showComingSoon && (
-        <ComingSoonModal
-          onClose={() => setShowComingSoon(false)}
-        />
+        <ComingSoonModal onClose={() => setShowComingSoon(false)} />
       )}
     </>
   );
@@ -316,19 +385,15 @@ function ComingSoonModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl">
-
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Clock3 size={24} />
         </div>
 
         <div className="mt-4 text-center">
-          <h2 className="text-lg font-semibold text-text">
-            Coming Soon
-          </h2>
-
+          <h2 className="text-lg font-semibold text-text">Coming Soon</h2>
           <p className="mt-2 text-sm leading-6 text-text-secondary">
-            Profile and resume management will be available
-            through the Settings section in a future update.
+            Profile and resume management will be available through the
+            Settings section in a future update.
           </p>
         </div>
 
@@ -339,7 +404,6 @@ function ComingSoonModal({ onClose }) {
         >
           Got it
         </button>
-
       </div>
     </div>
   );

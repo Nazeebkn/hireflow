@@ -8,6 +8,7 @@ class CompanyDetailsService:
     @staticmethod
     def get_company(company_id):
 
+        
         return CompanyDetailsRepository.get_company(
             company_id
         )

@@ -32,6 +32,7 @@ class UserStatusAPIView(APIView):
         UserStatusService.update_user_status(
             user_id,
             serializer.validated_data["is_active"],
+            serializer.validated_data.get("reason"),
         )
 
         return Response(

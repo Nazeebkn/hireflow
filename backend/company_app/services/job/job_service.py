@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 
+from company_app.models import JobQuestion
 from company_app.repositories.job.job_repository import JobRepository
 from users.models import User
 
@@ -12,6 +14,24 @@ from admin_app.services.notification.notification_service import (
 class JobService:
 
     @staticmethod
+    def save_job_questions(job, questions):
+        job.questions.all().delete()
+
+        JobQuestion.objects.bulk_create([
+            JobQuestion(
+                job=job,
+                question_text=question["question_text"],
+                question_type=question["question_type"],
+                options=question.get("options", []),
+                display_order=question.get("display_order", index),
+            )
+            for index, question in enumerate(questions)
+        ])
+    
+    
+    
+    @staticmethod
+    @transaction.atomic
     def create_job(user, validated_data):
 
         if user.role != User.UserRole.COMPANY:
@@ -31,10 +51,14 @@ class JobService:
                 "Only approved companies can create job vacancies."
             )
 
+        questions = validated_data.pop("questions", [])
+
         job = JobRepository.create_job(
             company,
             validated_data
         )
+
+        JobService.save_job_questions(job, questions)
 
         AdminNotificationService.notify_admins(
             notification_type=Notification.NotificationType.NEW_JOB_CREATED,
@@ -49,6 +73,7 @@ class JobService:
 
 
     @staticmethod
+    @transaction.atomic
     def update_job(user, job, validated_data):
 
         if job.company.user != user:
@@ -61,10 +86,23 @@ class JobService:
                 "Closed jobs cannot be edited."
             )
 
-        return JobRepository.update_job(
+        questions = validated_data.pop("questions", None)
+
+        updated_job = JobRepository.update_job(
             job,
             validated_data
         )
+
+        if questions is not None:
+            JobService.save_job_questions(
+                updated_job,
+                questions
+            )
+
+        return updated_job
+    
+    
+    
 
     @staticmethod
     def publish_job(user, job):

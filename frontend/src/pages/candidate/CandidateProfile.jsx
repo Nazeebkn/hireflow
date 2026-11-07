@@ -1650,7 +1650,7 @@ function CandidateProfile({ embedded = false }) {
               FormField={FormField}
             />
 
-            <ExperienceSection
+            {/* <ExperienceSection
               experiences={experiences}
               experienceLoading={experienceLoading}
               experienceSaving={experienceSaving}
@@ -1665,9 +1665,9 @@ function CandidateProfile({ embedded = false }) {
                 handleDeleteExperience
               }
               ProfileSection={ProfileSection}
-            />
+            /> */}
 
-            <EducationSection
+            {/* <EducationSection
               educations={educations}
               educationLoading={educationLoading}
               educationSaving={educationSaving}
@@ -1682,7 +1682,7 @@ function CandidateProfile({ embedded = false }) {
                 handleDeleteEducation
               }
               ProfileSection={ProfileSection}
-            />
+            /> */}
 
           </div>
 
@@ -1701,7 +1701,7 @@ function CandidateProfile({ embedded = false }) {
               FormField={FormField}
             />
 
-            <SkillsSection
+            {/* <SkillsSection
               skills={skills}
               skillName={skillName}
               setSkillName={setSkillName}
@@ -1720,7 +1720,7 @@ function CandidateProfile({ embedded = false }) {
               skillSaving={skillSaving}
               skillError={skillError}
               ProfileSection={ProfileSection}
-            />
+            /> */}
 
           </div>
         </div>
@@ -1730,7 +1730,7 @@ function CandidateProfile({ embedded = false }) {
           EXPERIENCE MODAL
       ====================================== */}
 
-      <ExperienceModal
+      {/* <ExperienceModal
         showExperienceForm={
           showExperienceForm
         }
@@ -1752,7 +1752,7 @@ function CandidateProfile({ embedded = false }) {
           resetExperienceForm
         }
         FormField={FormField}
-      />
+      /> */}
 
       {/* ======================================
           EDUCATION MODAL

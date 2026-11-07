@@ -897,7 +897,7 @@ function Companies() {
                                         className="text-primary"
                                       />
 
-                                    </div>
+                                    </div> 
 
                                     <div className="min-w-0">
 

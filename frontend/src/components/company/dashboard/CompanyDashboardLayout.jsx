@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import DashboardSidebar from "./DashboardSidebar";
+
+import CompanyNotificationPanel from "../notification/CompanyNotificationPanel";
+
+import {
+  getCompanyUnreadNotificationCount,
+} from "../../../services/company/companyNotificationService";
 
 function CompanyDashboardLayout({
   children,
@@ -12,7 +18,33 @@ function CompanyDashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
+  const [isNotificationOpen, setIsNotificationOpen] =
+    useState(false);
+
+  const [unreadNotificationCount, setUnreadNotificationCount] =
+    useState(0);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUnreadNotificationCount = async () => {
+      try {
+        const data =
+          await getCompanyUnreadNotificationCount();
+
+        setUnreadNotificationCount(
+          data?.unread_count || 0
+        );
+      } catch (error) {
+        console.error(
+          "Failed to fetch company unread notification count:",
+          error
+        );
+      }
+    };
+
+    fetchUnreadNotificationCount();
+  }, []);
 
   const handleSettingsClick = () => {
     setIsAccountMenuOpen(false);
@@ -145,36 +177,70 @@ function CompanyDashboardLayout({
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
-            {/* Notification */}
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface text-text-secondary transition hover:bg-background"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9a6 6 0 00-12 0v.75a8.967 8.967 0 01-2.31 6.022c1.71.614 3.524 1.072 5.454 1.31m5.713 0a24.255 24.255 0 01-5.713 0m5.713 0a3 3 0 11-5.713 0"
-                />
-              </svg>
 
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-error" />
-            </button>
+            {/* Notification */}
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Notifications"
+                onClick={() =>
+                  setIsNotificationOpen(
+                    (previous) => !previous
+                  )
+                }
+                className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface text-text-secondary transition hover:bg-background"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  className="h-5 w-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9a6 6 0 00-12 0v.75a8.967 8.967 0 01-2.31 6.022c1.71.614 3.524 1.072 5.454 1.31m5.713 0a24.255 24.255 0 01-5.713 0m5.713 0a3 3 0 11-5.713 0"
+                  />
+                </svg>
+
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-white">
+                    {unreadNotificationCount > 99
+                      ? "99+"
+                      : unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Panel */}
+              {isNotificationOpen && (
+                <CompanyNotificationPanel
+                  onClose={() =>
+                    setIsNotificationOpen(false)
+                  }
+                  onUnreadCountChange={(change) =>
+                    setUnreadNotificationCount(
+                      (previous) =>
+                        Math.max(
+                          0,
+                          previous + change
+                        )
+                    )
+                  }
+                />
+              )}
+            </div>
 
             {/* Company Account */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() =>
-                  setIsAccountMenuOpen((previous) => !previous)
+                  setIsAccountMenuOpen(
+                    (previous) => !previous
+                  )
                 }
                 className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2 transition hover:bg-background"
               >
@@ -194,7 +260,8 @@ function CompanyDashboardLayout({
                 {/* Company Name */}
                 <div className="text-left">
                   <p className="text-sm font-semibold text-text">
-                    {companyProfile?.company_name || "Company"}
+                    {companyProfile?.company_name ||
+                      "Company"}
                   </p>
 
                   <p className="text-xs text-text-secondary">
@@ -210,7 +277,9 @@ function CompanyDashboardLayout({
                   stroke="currentColor"
                   strokeWidth="1.7"
                   className={`h-4 w-4 text-text-secondary transition-transform ${
-                    isAccountMenuOpen ? "rotate-180" : ""
+                    isAccountMenuOpen
+                      ? "rotate-180"
+                      : ""
                   }`}
                 >
                   <path

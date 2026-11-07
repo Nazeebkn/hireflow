@@ -343,3 +343,86 @@ class AIInterview(models.Model):
 
     def __str__(self):
         return f"AI Interview - Application {self.application_id}"
+    
+    
+    
+    
+    
+class JobQuestion(models.Model):
+
+    class QuestionType(models.TextChoices):
+        SHORT_TEXT = "SHORT_TEXT", "Short Text"
+        YES_NO = "YES_NO", "Yes / No"
+        NUMBER = "NUMBER", "Number"
+        MULTIPLE_CHOICE = "MULTIPLE_CHOICE", "Multiple Choice"
+
+    job = models.ForeignKey(
+        Job,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+
+    question_text = models.CharField(max_length=500)
+
+    question_type = models.CharField(
+        max_length=20,
+        choices=QuestionType.choices,
+    )
+
+    options = models.JSONField(default=list, blank=True)
+
+    display_order = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return f"{self.job.title} - {self.question_text}"
+
+
+
+
+
+
+
+class ApplicationAnswer(models.Model):
+
+    application = models.ForeignKey(
+        JobApplication,
+        on_delete=models.CASCADE,
+        related_name="answers",
+    )
+
+    question = models.ForeignKey(
+        JobQuestion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submitted_answers",
+    )
+
+    question_text_snapshot = models.CharField(max_length=500)
+
+    question_type_snapshot = models.CharField(max_length=20)
+
+    options_snapshot = models.JSONField(default=list, blank=True)
+
+    answer = models.JSONField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["application", "question"],
+                name="unique_application_question_answer",
+            )
+        ]
+
+    def __str__(self):
+        return f"Answer for Application {self.application_id}"

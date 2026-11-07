@@ -8,6 +8,7 @@ class CompanyDetailsRepository:
     @staticmethod
     def get_company(company_id):
 
+        
         return get_object_or_404(
             Company.objects.select_related("user"),
             id=company_id,

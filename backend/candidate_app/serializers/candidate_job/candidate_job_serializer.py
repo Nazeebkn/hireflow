@@ -1,6 +1,27 @@
 from rest_framework import serializers
 
-from company_app.models import Job
+from company_app.models import Job, JobQuestion
+
+
+
+
+class CandidateJobQuestionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JobQuestion
+        fields = (
+            "id",
+            "question_text",
+            "question_type",
+            "options",
+            "display_order",
+        )
+        read_only_fields = fields
+        
+        
+        
+        
+
 
 
 class CandidateJobSerializer(serializers.ModelSerializer):
@@ -11,6 +32,11 @@ class CandidateJobSerializer(serializers.ModelSerializer):
     )
 
     company_logo = serializers.SerializerMethodField()
+    
+    questions = CandidateJobQuestionSerializer(
+        many=True,
+        read_only=True
+    )
 
     class Meta:
         model = Job
@@ -32,6 +58,7 @@ class CandidateJobSerializer(serializers.ModelSerializer):
             "published_at",
             "company_name",
             "company_logo",
+            "questions",
         )
 
         read_only_fields = fields

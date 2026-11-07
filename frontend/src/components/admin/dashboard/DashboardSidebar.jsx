@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import {
   LayoutDashboard,
@@ -13,6 +14,8 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+
+import { logout } from "../../../services/api";
 
 const sidebarItems = [
   {
@@ -48,8 +51,6 @@ const sidebarItems = [
 ];
 
 function DashboardSidebar() {
-  const navigate = useNavigate();
-
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -67,19 +68,14 @@ function DashboardSidebar() {
     setIsLoggingOut(true);
 
     setTimeout(() => {
-      localStorage.removeItem("access");
-      localStorage.removeItem("refresh");
-
-      navigate("/login");
+      logout();
     }, 2000);
   };
 
   return (
     <>
       <aside className="fixed left-0 top-0 flex h-screen w-72 flex-col border-r border-border bg-surface">
-
         {/* LOGO */}
-
         <div className="border-b border-border p-6">
           <h1 className="text-2xl font-bold text-primary">
             HireFlow
@@ -91,9 +87,7 @@ function DashboardSidebar() {
         </div>
 
         {/* NAVIGATION */}
-
         <nav className="flex-1 space-y-2 overflow-y-auto p-4">
-
           {sidebarItems.map((item) => {
             const Icon = item.icon;
 
@@ -117,13 +111,10 @@ function DashboardSidebar() {
               </NavLink>
             );
           })}
-
         </nav>
 
         {/* LOGOUT */}
-
         <div className="border-t border-border p-4">
-
           <button
             type="button"
             onClick={handleLogoutClick}
@@ -135,24 +126,16 @@ function DashboardSidebar() {
               Logout
             </span>
           </button>
-
         </div>
-
       </aside>
 
       {/* LOGOUT CONFIRMATION MODAL */}
-
       {showLogoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
-
             {/* MODAL HEADER */}
-
             <div className="flex items-start justify-between">
-
               <div className="flex items-center gap-3">
-
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <AlertCircle size={22} />
                 </div>
@@ -166,7 +149,6 @@ function DashboardSidebar() {
                     Confirm your logout
                   </p>
                 </div>
-
               </div>
 
               {!isLoggingOut && (
@@ -178,11 +160,9 @@ function DashboardSidebar() {
                   <X size={20} />
                 </button>
               )}
-
             </div>
 
             {/* MODAL CONTENT */}
-
             {!isLoggingOut ? (
               <>
                 <p className="mt-5 text-sm leading-6 text-text-secondary">
@@ -191,9 +171,7 @@ function DashboardSidebar() {
                 </p>
 
                 {/* MODAL ACTIONS */}
-
                 <div className="mt-6 flex justify-end gap-3">
-
                   <button
                     type="button"
                     onClick={handleCancelLogout}
@@ -209,14 +187,11 @@ function DashboardSidebar() {
                   >
                     Logout
                   </button>
-
                 </div>
               </>
             ) : (
               /* LOGOUT LOADING STATE */
-
               <div className="flex flex-col items-center justify-center py-8">
-
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Loader2
                     size={28}
@@ -231,10 +206,8 @@ function DashboardSidebar() {
                 <p className="mt-1 text-sm text-text-secondary">
                   Please wait a moment.
                 </p>
-
               </div>
             )}
-
           </div>
         </div>
       )}

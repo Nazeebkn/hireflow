@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
 import {
   ArrowLeft,
   Building2,
@@ -52,7 +51,7 @@ function formatDate(dateValue) {
   }
 
   const date = new Date(dateValue);
-
+  const [toast, setToast] = useState(null);
   if (Number.isNaN(date.getTime())) {
     return "Not specified";
   }
@@ -215,34 +214,46 @@ console.log("COMPANY JOBS:", data?.jobs);
      SUSPEND COMPANY
   ===================================================== */
 
-  const handleSuspend = async () => {
-    if (!company?.user) {
-      alert("Company user ID not found.");
-      return;
-    }
+const handleSuspend = async (reason) => {
+  if (!company?.user) {
+    setToast({
+      message: "Company user ID not found.",
+      type: "error",
+    });
+    return;
+  }
 
-    try {
-      setSuspending(true);
+  try {
+    setSuspending(true);
 
-      await suspendCompany(company.user);
+    await suspendCompany(company.user, reason);
 
-      setShowSuspendModal(false);
+    setShowSuspendModal(false);
 
-      await fetchCompanyDetails();
-    } catch (error) {
-      console.error(
-        "Failed to suspend company:",
-        error
-      );
+    await fetchCompanyDetails();
 
-      alert(
+    setToast({
+      message: "Company suspended successfully.",
+      type: "success",
+    });
+
+  } catch (error) {
+    console.error(
+      "Failed to suspend company:",
+      error
+    );
+
+    setToast({
+      message:
         error?.response?.data?.message ||
-          "Failed to suspend company."
-      );
-    } finally {
-      setSuspending(false);
-    }
-  };
+        "Failed to suspend company.",
+      type: "error",
+    });
+
+  } finally {
+    setSuspending(false);
+  }
+};
 
 
   /* =====================================================
@@ -1553,14 +1564,30 @@ function ConfirmModal({
 }) {
   const isSuspend = type === "suspend";
 
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
+
+  const handleConfirm = () => {
+    if (isSuspend) {
+      const trimmedReason = reason.trim();
+
+      if (!trimmedReason) {
+        setReasonError("Suspension reason is required.");
+        return;
+      }
+
+      onConfirm(trimmedReason);
+    } else {
+      onConfirm();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
 
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
 
-
         {/* HEADER */}
-
         <div className="flex items-start justify-between border-b border-border px-6 py-5">
 
           <div className="flex items-center gap-3">
@@ -1572,21 +1599,16 @@ function ConfirmModal({
                   : "bg-emerald-100 text-emerald-600"
               }`}
             >
-
               {isSuspend ? (
                 <Ban size={20} />
               ) : (
                 <ShieldCheck size={20} />
               )}
-
             </div>
 
             <div>
-
               <h2 className="font-bold text-text">
-                {isSuspend
-                  ? "Suspend Company"
-                  : "Activate Company"}
+                {isSuspend ? "Suspend Company" : "Activate Company"}
               </h2>
 
               <p className="mt-0.5 text-xs text-text-secondary">
@@ -1594,11 +1616,9 @@ function ConfirmModal({
                   ? "Account access restriction"
                   : "Restore account access"}
               </p>
-
             </div>
 
           </div>
-
 
           <button
             type="button"
@@ -1611,9 +1631,7 @@ function ConfirmModal({
 
         </div>
 
-
         {/* BODY */}
-
         <div className="p-6">
 
           <div
@@ -1623,37 +1641,57 @@ function ConfirmModal({
                 : "border-emerald-200 bg-emerald-50"
             }`}
           >
-
             <p
               className={`text-sm leading-6 ${
-                isSuspend
-                  ? "text-red-700"
-                  : "text-emerald-700"
+                isSuspend ? "text-red-700" : "text-emerald-700"
               }`}
             >
-
               Are you sure you want to{" "}
-
               <span className="font-bold">
-                {isSuspend
-                  ? "suspend"
-                  : "activate"}
-              </span>
-
-              {" "}
-
-              <span className="font-bold">
-                {companyName}
-              </span>
-              ?
-
+                {isSuspend ? "suspend" : "activate"}
+              </span>{" "}
+              <span className="font-bold">{companyName}</span>?
             </p>
-
           </div>
 
+          {/* SUSPENSION REASON */}
+          {isSuspend && (
+            <div className="mt-5">
+
+              <label className="mb-2 block text-sm font-semibold text-text">
+                Reason for suspension
+                <span className="ml-1 text-red-500">*</span>
+              </label>
+
+              <textarea
+                value={reason}
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  setReasonError("");
+                }}
+                placeholder="Enter the reason for suspending this company..."
+                rows={4}
+                maxLength={1000}
+                disabled={loading}
+                className="w-full resize-none rounded-xl border border-border px-4 py-3 text-sm text-text outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:opacity-60"
+              />
+
+              <div className="mt-1 flex justify-between">
+                {reasonError && (
+                  <p className="text-xs text-red-600">
+                    {reasonError}
+                  </p>
+                )}
+
+                <span className="ml-auto text-xs text-text-secondary">
+                  {reason.length}/1000
+                </span>
+              </div>
+
+            </div>
+          )}
 
           {/* ACTIONS */}
-
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
             <button
@@ -1665,10 +1703,9 @@ function ConfirmModal({
               Cancel
             </button>
 
-
             <button
               type="button"
-              onClick={onConfirm}
+              onClick={handleConfirm}
               disabled={loading}
               className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
                 isSuspend
@@ -1676,14 +1713,10 @@ function ConfirmModal({
                   : "bg-emerald-600 hover:bg-emerald-700"
               }`}
             >
-
               {loading ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-
-                  {isSuspend
-                    ? "Suspending..."
-                    : "Activating..."}
+                  {isSuspend ? "Suspending..." : "Activating..."}
                 </>
               ) : (
                 <>
@@ -1693,20 +1726,15 @@ function ConfirmModal({
                     <ShieldCheck size={16} />
                   )}
 
-                  {isSuspend
-                    ? "Suspend"
-                    : "Activate"}
+                  {isSuspend ? "Suspend" : "Activate"}
                 </>
               )}
-
             </button>
 
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }

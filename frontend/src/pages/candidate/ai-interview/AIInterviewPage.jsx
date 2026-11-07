@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import { toast } from "react-hot-toast";
 import { startAIInterview } from "../../../services/candidate/candidateJobApplicationService";
 
 import {
@@ -18,31 +18,24 @@ import {
 const AIInterviewPage = () => {
   const navigate = useNavigate();
   const { interviewId } = useParams();
+
 const handleBeginInterview = async () => {
   try {
-    console.log("Starting interview:", interviewId);
-
     const response = await startAIInterview(interviewId);
-
-    console.log("Start interview response:", response);
 
     navigate(`/candidate/interviews/${interviewId}/session`);
   } catch (error) {
-    console.log("FULL ERROR:", error);
-    console.log("STATUS:", error?.response?.status);
-    console.log("DATA:", error?.response?.data);
+    console.error("Start interview failed:", error);
 
-    alert(
-      JSON.stringify(
-        error?.response?.data || {
-          message: error?.message,
-        },
-        null,
-        2
-      )
-    );
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.detail ||
+      "Unable to start the interview. Please try again.";
+
+    toast.error(message);
   }
 };
+
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">

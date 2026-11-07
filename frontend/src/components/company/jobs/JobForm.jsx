@@ -33,6 +33,10 @@ function JobForm({ job = null, onSuccess }) {
     application_deadline: job?.application_deadline || "",
   });
 
+  const [questions, setQuestions] = useState(
+    Array.isArray(job?.questions) ? job.questions : []
+  );
+
   const [errors, setErrors] = useState({});
 
   const isUpdateMode = Boolean(job);
@@ -58,11 +62,119 @@ function JobForm({ job = null, onSuccess }) {
   };
 
   // ==========================================
+  // APPLICATION QUESTION HANDLERS
+  // ==========================================
+
+  const addQuestion = () => {
+    if (questions.length >= 8) {
+      toast.error("Maximum 8 questions allowed.");
+      return;
+    }
+
+    setQuestions((previous) => [
+      ...previous,
+      {
+        question_text: "",
+        question_type: "SHORT_TEXT",
+        options: [],
+        display_order: previous.length,
+      },
+    ]);
+  };
+
+  const updateQuestion = (index, field, value) => {
+    setQuestions((previous) =>
+      previous.map((question, questionIndex) => {
+        if (questionIndex !== index) {
+          return question;
+        }
+
+        const updatedQuestion = {
+          ...question,
+          [field]: value,
+        };
+
+        if (field === "question_type" && value !== "MULTIPLE_CHOICE") {
+          updatedQuestion.options = [];
+        }
+
+        return updatedQuestion;
+      })
+    );
+  };
+
+  const removeQuestion = (index) => {
+    setQuestions((previous) =>
+      previous
+        .filter((_, questionIndex) => questionIndex !== index)
+        .map((question, questionIndex) => ({
+          ...question,
+          display_order: questionIndex,
+        }))
+    );
+  };
+
+  const moveQuestion = (index, direction) => {
+    const newIndex = index + direction;
+
+    if (newIndex < 0 || newIndex >= questions.length) {
+      return;
+    }
+
+    setQuestions((previous) => {
+      const updated = [...previous];
+      [updated[index], updated[newIndex]] = [
+        updated[newIndex],
+        updated[index],
+      ];
+
+      return updated.map((question, questionIndex) => ({
+        ...question,
+        display_order: questionIndex,
+      }));
+    });
+  };
+
+  // ==========================================
   // HANDLE SUBMIT
   // ==========================================
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // Questions are optional, but if added there must be 3 to 8.
+    if (questions.length > 0 && (questions.length < 3 || questions.length > 8)) {
+      toast.error("Add either 0 questions or between 3 and 8 questions.");
+      return;
+    }
+
+    for (let index = 0; index < questions.length; index += 1) {
+      const question = questions[index];
+
+      if (!question.question_text?.trim()) {
+        toast.error(`Enter the text for question ${index + 1}.`);
+        return;
+      }
+
+      if (question.question_type === "MULTIPLE_CHOICE") {
+        const options = Array.isArray(question.options)
+          ? question.options.map((option) => option.trim()).filter(Boolean)
+          : [];
+        const uniqueOptions = new Set(
+          options.map((option) => option.toLowerCase())
+        );
+
+        if (options.length < 2) {
+          toast.error(`Question ${index + 1} needs at least 2 options.`);
+          return;
+        }
+
+        if (uniqueOptions.size !== options.length) {
+          toast.error(`Question ${index + 1} has duplicate options.`);
+          return;
+        }
+      }
+    }
 
     // Run complete job form validation
     const validationErrors = validateJobForm(formData);
@@ -109,6 +221,16 @@ function JobForm({ job = null, onSuccess }) {
 
         application_deadline:
           formData.application_deadline || null,
+
+        questions: questions.map((question, index) => ({
+          question_text: question.question_text.trim(),
+          question_type: question.question_type,
+          options:
+            question.question_type === "MULTIPLE_CHOICE"
+              ? question.options.map((option) => option.trim()).filter(Boolean)
+              : [],
+          display_order: index,
+        })),
       };
 
       // ========================================
@@ -529,6 +651,151 @@ function JobForm({ job = null, onSuccess }) {
               {errors.skills}
             </p>
           )}
+        </div>
+      </section>
+
+      {/* =========================
+          APPLICATION QUESTIONS
+      ========================= */}
+
+      <section className="border-t border-border pt-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-text">
+              Application Questions <span className="font-normal text-text-secondary">(Optional)</span>
+            </h3>
+            <p className="mt-1 text-xs text-text-secondary">
+              Ask candidates for job-specific information. If you add questions, add between 3 and 8. All questions are mandatory for applicants.
+            </p>
+          </div>
+
+        </div>
+
+        {questions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center">
+            <p className="text-sm text-text-secondary">
+              No application questions added. Candidates can apply without answering extra questions.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {questions.map((question, index) => (
+              <div
+                key={question.id || `question-${index}`}
+                className="rounded-xl border border-border bg-surface p-4"
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-text">
+                    Question {index + 1}
+                  </p>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveQuestion(index, -1)}
+                      disabled={loading || index === 0}
+                      aria-label={`Move question ${index + 1} up`}
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-text-secondary hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveQuestion(index, 1)}
+                      disabled={loading || index === questions.length - 1}
+                      aria-label={`Move question ${index + 1} down`}
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-text-secondary hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeQuestion(index)}
+                      disabled={loading}
+                      className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className={labelClass}>
+                      Question Text
+                    </label>
+                    <input
+                      type="text"
+                      value={question.question_text || ""}
+                      onChange={(event) =>
+                        updateQuestion(index, "question_text", event.target.value)
+                      }
+                      maxLength={500}
+                      placeholder="e.g. How many years of experience do you have?"
+                      className={inputClass()}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>
+                      Answer Type
+                    </label>
+                    <select
+                      value={question.question_type}
+                      onChange={(event) =>
+                        updateQuestion(index, "question_type", event.target.value)
+                      }
+                      className={inputClass()}
+                    >
+                      <option value="SHORT_TEXT">Short Text</option>
+                      <option value="YES_NO">Yes / No</option>
+                      <option value="NUMBER">Number</option>
+                      <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                    </select>
+                  </div>
+
+                  {question.question_type === "MULTIPLE_CHOICE" && (
+                    <div>
+                      <label className={labelClass}>
+                        Options (one option per line)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={(question.options || []).join("\n")}
+                        onChange={(event) =>
+                          updateQuestion(
+                            index,
+                            "options",
+                            event.target.value.split("\n")
+                          )
+                        }
+                        placeholder={"Option 1\nOption 2\nOption 3"}
+                        className={`${inputClass()} resize-y`}
+                      />
+                      <p className="mt-1 text-xs text-text-secondary">
+                        Add at least 2 different options. Candidates can select multiple options.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="sticky bottom-0 z-20 -mx-1 mt-4 border-t border-border/70 bg-surface/95 px-1 pb-2 pt-3 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={addQuestion}
+            disabled={loading || questions.length >= 8}
+            className="w-full rounded-xl border border-dashed border-primary/40 bg-surface px-4 py-3 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {questions.length === 0 ? "+ Add First Question" : "+ Add Another Question"}
+          </button>
+
+          <p className="mt-2 text-center text-xs text-text-secondary">
+            {questions.length} of 8 questions added
+          </p>
         </div>
       </section>
 

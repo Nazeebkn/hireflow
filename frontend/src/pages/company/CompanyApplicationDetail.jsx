@@ -23,7 +23,6 @@ import CompanyDashboardLayout from "../../components/company/dashboard/CompanyDa
 
 import {
     getCompanyApplicationById,
-    getCompanyResumeScreeningReport,
 } from "../../services/company/jobApplicationService";
 
 import { getCompanyProfile } from "../../services/company/companyService";
@@ -45,6 +44,13 @@ const CompanyApplicationDetail = () => {
     const [resumeReportLoading, setResumeReportLoading] =
         useState(false);
     const [resumeReportError, setResumeReportError] =
+        useState("");
+
+    const [interviewReport, setInterviewReport] =
+        useState(null);
+    const [interviewReportLoading, setInterviewReportLoading] =
+        useState(false);
+    const [interviewReportError, setInterviewReportError] =
         useState("");
 
 
@@ -144,18 +150,18 @@ const CompanyApplicationDetail = () => {
         {
             key: "interview",
             label: "AI Interview Report",
-            available: false,
+            available: true,
         },
         {
-            key: "activity",
-            label: "Activity",
+            key: "answers",
+            label: "Question Answers",
             available: true,
         },
     ];
 
 
     // =========================================================
-    // FETCH APPLICATION
+    // FETCH APPLICATION + REPORTS
     // =========================================================
 
     useEffect(() => {
@@ -163,6 +169,10 @@ const CompanyApplicationDetail = () => {
             try {
                 setLoading(true);
                 setError("");
+                setResumeReportLoading(true);
+                setInterviewReportLoading(true);
+                setResumeReportError("");
+                setInterviewReportError("");
 
                 const data =
                     await getCompanyApplicationById(
@@ -170,11 +180,32 @@ const CompanyApplicationDetail = () => {
                     );
 
                 setApplication(data);
+
+                // The company application detail API already returns
+                // both reports. Do not make separate report requests.
+                setResumeReport(data?.resume_report || null);
+                setInterviewReport(data?.interview_report || null);
+
+                if (!data?.resume_report) {
+                    setResumeReportError(
+                        "Resume screening report is not available yet."
+                    );
+                }
+
+                if (!data?.interview_report) {
+                    setInterviewReportError(
+                        "AI interview report is not available yet."
+                    );
+                }
             } catch (error) {
                 console.error(
                     "Failed to fetch company application:",
                     error?.response?.data || error
                 );
+
+                setApplication(null);
+                setResumeReport(null);
+                setInterviewReport(null);
 
                 setError(
                     error?.response?.data?.detail ||
@@ -183,6 +214,8 @@ const CompanyApplicationDetail = () => {
                 );
             } finally {
                 setLoading(false);
+                setResumeReportLoading(false);
+                setInterviewReportLoading(false);
             }
         };
 
@@ -211,44 +244,6 @@ const CompanyApplicationDetail = () => {
 
         fetchCompanyProfile();
     }, []);
-
-
-    // =========================================================
-    // FETCH RESUME REPORT
-    // =========================================================
-
-    const fetchResumeReport = async () => {
-        try {
-            setResumeReportLoading(true);
-            setResumeReportError("");
-
-            const data =
-                await getCompanyResumeScreeningReport(
-                    applicationId
-                );
-
-            setResumeReport(data.screening);
-        } catch (error) {
-            console.error(
-                "Failed to fetch resume screening report:",
-                error?.response?.data || error
-            );
-
-            if (error?.response?.status === 404) {
-                setResumeReportError(
-                    "Resume screening report is not available yet."
-                );
-            } else {
-                setResumeReportError(
-                    error?.response?.data?.detail ||
-                        error?.response?.data?.message ||
-                        "Failed to load resume screening report."
-                );
-            }
-        } finally {
-            setResumeReportLoading(false);
-        }
-    };
 
 
     // =========================================================
@@ -961,15 +956,6 @@ const CompanyApplicationDetail = () => {
                                                             setActiveTab(
                                                                 tab.key
                                                             );
-
-                                                            if (
-                                                                tab.key ===
-                                                                    "resume" &&
-                                                                !resumeReport &&
-                                                                !resumeReportLoading
-                                                            ) {
-                                                                fetchResumeReport();
-                                                            }
                                                         }}
                                                         className={`relative border-b-2 px-1 py-4 text-xs font-semibold transition ${
                                                             activeTab ===
@@ -1791,100 +1777,89 @@ const CompanyApplicationDetail = () => {
 
 
                                         {/* =========================================
-                                            ACTIVITY
+                                            QUESTION ANSWERS
                                         ========================================= */}
 
-                                        {activeTab ===
-                                            "activity" && (
+                                        {activeTab === "answers" && (
                                             <section>
-
                                                 <div className="mb-6">
-
                                                     <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
-                                                        Application Activity
+                                                        Candidate Responses
                                                     </p>
 
                                                     <h2 className="mt-1 text-lg font-bold text-text">
-                                                        Activity History
+                                                        Job Requirement Answers
                                                     </h2>
 
                                                     <p className="mt-1 text-xs text-text-secondary">
-                                                        Timeline of activity related to this application.
+                                                        Answers submitted by the candidate with this application. These responses are read-only.
                                                     </p>
-
                                                 </div>
 
+                                                {Array.isArray(application.answers) &&
+                                                application.answers.length > 0 ? (
+                                                    <div className="space-y-4">
+                                                        {application.answers.map((item, index) => {
+                                                            const answer = item.answer;
+                                                            const answerText =
+                                                                typeof answer === "boolean"
+                                                                    ? answer ? "Yes" : "No"
+                                                                    : Array.isArray(answer)
+                                                                    ? answer.join(", ")
+                                                                    : answer === null || answer === undefined || answer === ""
+                                                                    ? "No answer provided"
+                                                                    : typeof answer === "object"
+                                                                    ? JSON.stringify(answer)
+                                                                    : String(answer);
 
-                                                <div className="relative">
+                                                            return (
+                                                                <article
+                                                                    key={item.id || `${item.question_text}-${index}`}
+                                                                    className="rounded-xl border border-border bg-background p-5"
+                                                                >
+                                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                                                                            Question {index + 1}
+                                                                        </span>
 
-                                                    <div className="absolute bottom-0 left-4 top-0 w-px bg-border" />
+                                                                        <span className="rounded-md border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold text-text-secondary">
+                                                                            {formatValue(item.question_type)}
+                                                                        </span>
+                                                                    </div>
 
+                                                                    <h3 className="mt-3 text-sm font-semibold leading-6 text-text">
+                                                                        {item.question_text || "Question unavailable"}
+                                                                    </h3>
 
-                                                    <div className="relative flex gap-4">
+                                                                    <div className="mt-3 rounded-lg border border-border bg-surface p-4">
+                                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                                                                            Candidate Answer
+                                                                        </p>
 
-                                                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white ring-4 ring-surface">
-
-                                                            <Check
-                                                                size={
-                                                                    15
-                                                                }
-                                                            />
-
-                                                        </div>
-
-
-                                                        <div className="pb-8">
-
-                                                            <p className="text-sm font-semibold text-text">
-                                                                Application Submitted
-                                                            </p>
-
-                                                            <p className="mt-1 text-xs text-text-secondary">
-                                                                {formatDateTime(
-                                                                    application.applied_at
-                                                                )}
-                                                            </p>
-
-                                                        </div>
-
+                                                                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-text">
+                                                                            {answerText}
+                                                                        </p>
+                                                                    </div>
+                                                                </article>
+                                                            );
+                                                        })}
                                                     </div>
+                                                ) : (
+                                                    <div className="rounded-xl border border-dashed border-border bg-background px-6 py-12 text-center">
+                                                        <HelpCircle
+                                                            size={28}
+                                                            className="mx-auto text-text-secondary"
+                                                        />
 
+                                                        <h3 className="mt-3 text-sm font-semibold text-text">
+                                                            No question answers available
+                                                        </h3>
 
-                                                    {application.updated_at &&
-                                                        application.updated_at !==
-                                                            application.applied_at && (
-                                                            <div className="relative flex gap-4">
-
-                                                                <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-text-secondary ring-4 ring-surface">
-
-                                                                    <Circle
-                                                                        size={
-                                                                            10
-                                                                        }
-                                                                    />
-
-                                                                </div>
-
-
-                                                                <div>
-
-                                                                    <p className="text-sm font-semibold text-text">
-                                                                        Application Updated
-                                                                    </p>
-
-                                                                    <p className="mt-1 text-xs text-text-secondary">
-                                                                        {formatDateTime(
-                                                                            application.updated_at
-                                                                        )}
-                                                                    </p>
-
-                                                                </div>
-
-                                                            </div>
-                                                        )}
-
-                                                </div>
-
+                                                        <p className="mt-1 text-xs text-text-secondary">
+                                                            This application does not contain submitted job requirement answers.
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </section>
                                         )}
 
@@ -1895,30 +1870,269 @@ const CompanyApplicationDetail = () => {
 
                                         {activeTab ===
                                             "interview" && (
-                                            <div className="flex min-h-[350px] items-center justify-center text-center">
+                                            <div className="space-y-5">
 
-                                                <div>
-
-                                                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-background text-text-secondary">
-
-                                                        <FileText
-                                                            size={
-                                                                23
-                                                            }
-                                                        />
-
+                                                {interviewReportLoading && (
+                                                    <div className="flex min-h-[350px] items-center justify-center">
+                                                        <div className="text-center">
+                                                            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                                                            <p className="mt-4 text-sm font-semibold text-text">
+                                                                Loading AI Interview Report
+                                                            </p>
+                                                            <p className="mt-1 text-xs text-text-secondary">
+                                                                Fetching the interview evaluation...
+                                                            </p>
+                                                        </div>
                                                     </div>
+                                                )}
 
-                                                    <h2 className="mt-4 text-base font-bold text-text">
-                                                        AI Interview Report
-                                                    </h2>
+                                                {!interviewReportLoading &&
+                                                    interviewReportError && (
+                                                        <div className="rounded-xl border border-border bg-background p-10 text-center">
+                                                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                                                <FileText size={23} />
+                                                            </div>
+                                                            <h2 className="mt-4 text-base font-bold text-text">
+                                                                AI Interview Report
+                                                            </h2>
+                                                            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-secondary">
+                                                                {interviewReportError}
+                                                            </p>
+                                                        </div>
+                                                    )}
 
-                                                    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-secondary">
-                                                        This report will become available when the AI interview stage and evaluation data are implemented.
-                                                    </p>
+                                                {!interviewReportLoading &&
+                                                    !interviewReportError &&
+                                                    interviewReport && (
+                                                        <>
+                                                            <section className="rounded-xl border border-border bg-background p-5">
+                                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                                    <div>
+                                                                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                                            AI Interview
+                                                                        </p>
+                                                                        <h2 className="mt-1 text-lg font-bold text-text">
+                                                                            Interview Evaluation
+                                                                        </h2>
+                                                                        <p className="mt-1 text-xs text-text-secondary">
+                                                                            AI-generated evaluation of the candidate's interview performance.
+                                                                        </p>
+                                                                    </div>
+                                                                    <span className="inline-flex w-fit rounded-full bg-primary/10 px-3 py-1.5 text-[10px] font-bold text-primary">
+                                                                        {formatValue(interviewReport.recommendation)}
+                                                                    </span>
+                                                                </div>
+                                                            </section>
 
-                                                </div>
+                                                            <section className="rounded-xl border border-border bg-surface p-5">
+                                                                <div className="flex flex-col gap-5 md:flex-row md:items-center">
+                                                                    <div className="shrink-0">
+                                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                                                                            Overall Score
+                                                                        </p>
+                                                                        <div className="mt-1 flex items-baseline gap-1">
+                                                                            <span className="text-4xl font-black tracking-tight text-primary">
+                                                                                {interviewReport.overall_score ?? 0}
+                                                                            </span>
+                                                                            <span className="text-sm font-medium text-text-secondary">
+                                                                                /100
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="h-px bg-border md:h-12 md:w-px" />
+                                                                    <div className="flex-1">
+                                                                        <div className="mb-2 flex items-center justify-between">
+                                                                            <span className="text-xs font-semibold text-text">
+                                                                                Interview Performance
+                                                                            </span>
+                                                                            <span className="text-xs font-bold text-primary">
+                                                                                {interviewReport.overall_score ?? 0}%
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="h-2 overflow-hidden rounded-full bg-border">
+                                                                            <div
+                                                                                className="h-full rounded-full bg-primary"
+                                                                                style={{
+                                                                                    width: `${Math.min(
+                                                                                        Math.max(
+                                                                                            interviewReport.overall_score || 0,
+                                                                                            0
+                                                                                        ),
+                                                                                        100
+                                                                                    )}%`,
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </section>
 
+                                                            <section className="rounded-xl border border-border bg-surface p-5">
+                                                                <h2 className="text-sm font-bold text-text">
+                                                                    Interview Statistics
+                                                                </h2>
+                                                                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                                    <div className="rounded-lg border border-border bg-background p-4">
+                                                                        <p className="text-xs text-text-secondary">
+                                                                            Total Questions
+                                                                        </p>
+                                                                        <p className="mt-1 text-2xl font-bold text-text">
+                                                                            {interviewReport.total_questions ?? 0}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="rounded-lg border border-border bg-background p-4">
+                                                                        <p className="text-xs text-text-secondary">
+                                                                            Answered Questions
+                                                                        </p>
+                                                                        <p className="mt-1 text-2xl font-bold text-primary">
+                                                                            {interviewReport.answered_questions ?? 0}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </section>
+
+                                                            <section className="rounded-xl border border-border bg-surface p-5">
+                                                                <div className="flex items-center gap-2">
+                                                                    <FileText size={17} className="text-primary" />
+                                                                    <h2 className="text-sm font-bold text-text">
+                                                                        AI Summary
+                                                                    </h2>
+                                                                </div>
+                                                                <p className="mt-4 text-sm leading-7 text-text-secondary">
+                                                                    {interviewReport.summary || "No summary available."}
+                                                                </p>
+                                                            </section>
+
+                                                            <section className="rounded-xl border border-border bg-surface p-5">
+                                                                <h2 className="text-sm font-bold text-text">
+                                                                    Skill Analysis
+                                                                </h2>
+                                                                {Array.isArray(
+                                                                    interviewReport.skill_analysis
+                                                                ) &&
+                                                                interviewReport.skill_analysis.length > 0 ? (
+                                                                    <div className="mt-4 space-y-4">
+                                                                        {interviewReport.skill_analysis.map(
+                                                                            (item, index) => {
+                                                                                const skill =
+                                                                                    item?.skill ||
+                                                                                    `Skill ${index + 1}`;
+                                                                                const score =
+                                                                                    item?.score ?? 0;
+                                                                                const level =
+                                                                                    item?.level ||
+                                                                                    null;
+
+                                                                                return (
+                                                                                    <div
+                                                                                        key={`${skill}-${index}`}
+                                                                                        className="rounded-lg border border-border bg-background p-4"
+                                                                                    >
+                                                                                        <div className="flex items-center justify-between gap-4">
+                                                                                            <span className="text-xs font-semibold text-text">
+                                                                                                {skill}
+                                                                                            </span>
+                                                                                            <span className="text-xs font-bold text-primary">
+                                                                                                {score}%
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border">
+                                                                                            <div
+                                                                                                className="h-full rounded-full bg-primary"
+                                                                                                style={{
+                                                                                                    width: `${Math.min(
+                                                                                                        Math.max(score, 0),
+                                                                                                        100
+                                                                                                    )}%`,
+                                                                                                }}
+                                                                                            />
+                                                                                        </div>
+                                                                                        {level && (
+                                                                                            <p className="mt-2 text-[11px] text-text-secondary">
+                                                                                                Level: {formatValue(level)}
+                                                                                            </p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="mt-3 text-xs text-text-secondary">
+                                                                        No skill analysis available.
+                                                                    </p>
+                                                                )}
+                                                            </section>
+
+                                                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                                                <section className="rounded-xl border border-border bg-surface p-5">
+                                                                    <h2 className="text-sm font-bold text-text">
+                                                                        Strengths
+                                                                    </h2>
+                                                                    {interviewReport.strengths?.length ? (
+                                                                        <ul className="mt-4 space-y-3">
+                                                                            {interviewReport.strengths.map((strength, index) => (
+                                                                                <li
+                                                                                    key={index}
+                                                                                    className="flex gap-3 text-sm leading-5 text-text-secondary"
+                                                                                >
+                                                                                    <CheckCircle2
+                                                                                        size={16}
+                                                                                        className="mt-0.5 shrink-0 text-primary"
+                                                                                    />
+                                                                                    <span>{strength}</span>
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    ) : (
+                                                                        <p className="mt-3 text-xs text-text-secondary">
+                                                                            No strengths were identified.
+                                                                        </p>
+                                                                    )}
+                                                                </section>
+
+                                                                <section className="rounded-xl border border-border bg-surface p-5">
+                                                                    <h2 className="text-sm font-bold text-text">
+                                                                        Areas to Improve
+                                                                    </h2>
+                                                                    {interviewReport.areas_to_improve?.length ? (
+                                                                        <ul className="mt-4 space-y-3">
+                                                                            {interviewReport.areas_to_improve.map((area, index) => (
+                                                                                <li
+                                                                                    key={index}
+                                                                                    className="flex gap-3 text-sm leading-5 text-text-secondary"
+                                                                                >
+                                                                                    <Circle
+                                                                                        size={15}
+                                                                                        className="mt-1 shrink-0 text-text-secondary"
+                                                                                    />
+                                                                                    <span>{area}</span>
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    ) : (
+                                                                        <p className="mt-3 text-xs text-text-secondary">
+                                                                            No improvement areas were identified.
+                                                                        </p>
+                                                                    )}
+                                                                </section>
+                                                            </div>
+
+                                                            <section className="rounded-xl border border-border bg-background p-5">
+                                                                <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                                                                    AI Recommendation
+                                                                </p>
+                                                                <h2 className="mt-1 text-base font-bold text-text">
+                                                                    {formatValue(interviewReport.recommendation)}
+                                                                </h2>
+                                                            </section>
+
+                                                            <div className="flex items-center gap-2 text-[10px] text-text-secondary">
+                                                                <Clock3 size={13} />
+                                                                Report generated {formatDateTime(interviewReport.generated_at)}
+                                                            </div>
+                                                        </>
+                                                    )}
                                             </div>
                                         )}
 

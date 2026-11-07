@@ -23,9 +23,12 @@ function SkillsSection({
       icon={<Code2 size={20} />}
     >
       <div className="space-y-5">
+
         {editing && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-12">
+
+            {/* Skill */}
+            <div className="md:col-span-5">
               <label className="mb-2 block text-sm font-medium text-text">
                 Skill
                 <span className="ml-1 text-red-500">*</span>
@@ -37,11 +40,12 @@ function SkillsSection({
                 onChange={(e) => setSkillName(e.target.value)}
                 placeholder="e.g. Python"
                 disabled={skillSaving}
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 w-full rounded-xl border border-border bg-surface px-4 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </div>
 
-            <div>
+            {/* Proficiency */}
+            <div className="md:col-span-3">
               <label className="mb-2 block text-sm font-medium text-text">
                 Proficiency
                 <span className="ml-1 text-red-500">*</span>
@@ -49,9 +53,11 @@ function SkillsSection({
 
               <select
                 value={skillProficiency}
-                onChange={(e) => setSkillProficiency(e.target.value)}
+                onChange={(e) =>
+                  setSkillProficiency(e.target.value)
+                }
                 disabled={skillSaving}
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 w-full rounded-xl border border-border bg-surface px-4 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="">Select level</option>
                 <option value="BEGINNER">Beginner</option>
@@ -61,42 +67,48 @@ function SkillsSection({
               </select>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-text">
+            {/* Years of Experience */}
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium leading-5 text-text">
                 Years of Experience
               </label>
 
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  value={skillYears}
-                  onChange={(e) => setSkillYears(e.target.value)}
-                  placeholder="0"
-                  disabled={skillSaving}
-                  className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
-                />
-
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  disabled={skillSaving}
-                  className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Plus size={17} />
-                  {skillSaving ? "Adding..." : "Add"}
-                </button>
-              </div>
+              <input
+                type="number"
+                min="0"
+                value={skillYears}
+                onChange={(e) => setSkillYears(e.target.value)}
+                placeholder="0"
+                disabled={skillSaving}
+                className="h-12 w-full rounded-xl border border-border bg-surface px-4 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+              />
             </div>
+
+            {/* Add Button */}
+            <div className="flex items-end md:col-span-2">
+              <button
+                type="button"
+                onClick={handleAddSkill}
+                disabled={skillSaving}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Plus size={17} />
+
+                {skillSaving ? "Adding..." : "Add"}
+              </button>
+            </div>
+
           </div>
         )}
 
+        {/* Error */}
         {skillError && (
           <p className="text-sm font-medium text-red-600">
             {skillError}
           </p>
         )}
 
+        {/* Loading */}
         {skillsLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -115,13 +127,16 @@ function SkillsSection({
           </div>
         ) : (
           <div className="space-y-3">
+
             {skills.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3"
               >
                 <div className="min-w-0">
+
                   <div className="flex flex-wrap items-center gap-2">
+
                     <span className="text-sm font-semibold text-text">
                       {item.skill_name ||
                         item.skill?.name ||
@@ -133,6 +148,7 @@ function SkillsSection({
                         {item.proficiency.replace("_", " ")}
                       </span>
                     )}
+
                   </div>
 
                   {item.years_of_experience !== undefined &&
@@ -145,12 +161,15 @@ function SkillsSection({
                         of experience
                       </p>
                     )}
+
                 </div>
 
                 {editing && (
                   <button
                     type="button"
-                    onClick={() => handleRemoveSkill(item.id)}
+                    onClick={() =>
+                      handleRemoveSkill(item.id)
+                    }
                     disabled={skillSaving}
                     className="ml-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-secondary transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Remove skill"
@@ -158,10 +177,13 @@ function SkillsSection({
                     <X size={17} />
                   </button>
                 )}
+
               </div>
             ))}
+
           </div>
         )}
+
       </div>
     </ProfileSection>
   );

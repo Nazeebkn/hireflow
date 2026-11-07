@@ -2,12 +2,82 @@ from rest_framework import serializers
 
 from company_app.models import Job
 
+from company_app.models import Job, JobQuestion
+
+
+
+class JobQuestionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JobQuestion
+        fields = (
+            "id",
+            "question_text",
+            "question_type",
+            "options",
+            "display_order",
+        )
+        read_only_fields = ("id",)
+
+    def validate_question_text(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                "Question text cannot be empty."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        question_type = attrs.get(
+            "question_type",
+            getattr(self.instance, "question_type", None)
+        )
+
+        options = attrs.get("options", [])
+
+        if question_type == JobQuestion.QuestionType.MULTIPLE_CHOICE:
+            if not isinstance(options, list) or len(options) < 2:
+                raise serializers.ValidationError({
+                    "options": "Multiple Choice requires at least 2 options."
+                })
+
+            cleaned_options = [
+                option.strip()
+                for option in options
+                if isinstance(option, str) and option.strip()
+            ]
+
+            if len(cleaned_options) != len(options):
+                raise serializers.ValidationError({
+                    "options": "Options cannot be empty."
+                })
+
+            if len(set(option.lower() for option in cleaned_options)) != len(cleaned_options):
+                raise serializers.ValidationError({
+                    "options": "Duplicate options are not allowed."
+                })
+
+            attrs["options"] = cleaned_options
+
+        else:
+            attrs["options"] = []
+
+        return attrs
+    
+    
+    
+    
+
 
 class JobSerializer(serializers.ModelSerializer):
 
     application_count = serializers.IntegerField(
         read_only=True
     )
+    
+    questions = JobQuestionSerializer(many=True, required=False)
 
 
     class Meta:
@@ -32,6 +102,7 @@ class JobSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "application_count",
+            "questions",
         )
 
         read_only_fields = (
@@ -208,5 +279,17 @@ class JobSerializer(serializers.ModelSerializer):
                 "maximum_salary":
                 "Maximum salary must be greater than or equal to minimum salary."
             })
+            
+        questions = attrs.get("questions")
+
+        if questions is not None:
+            question_count = len(questions)
+
+            if question_count != 0 and not 3 <= question_count <= 8:
+                raise serializers.ValidationError({
+                    "questions": "Add either 0 questions or between 3 and 8 questions."
+                })
 
         return attrs
+    
+    

@@ -46,3 +46,12 @@ export const submitAIInterviewCodingAnswer = async (
 
   return response.data;
 };
+
+
+export const completeAIInterview = async (interviewId) => {
+  const response = await api.post(
+    `/candidate/interviews/${interviewId}/complete/`
+  );
+
+  return response.data;
+};

@@ -1,59 +1,60 @@
 import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
   BriefcaseBusiness,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   MapPin,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 
 function CompanyRecentJobs({ jobs = [] }) {
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  const navigate = useNavigate();
 
-  const JOBS_PER_PAGE = 8;
+  const { companyId } = useParams();
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const JOBS_PER_PAGE = 5;
+
 
   /* =====================================================
-     RESET PAGE WHEN JOB DATA CHANGES
+     SORT JOBS BY MOST RECENT
   ===================================================== */
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [jobs]);
+  const sortedJobs = [...jobs].sort((a, b) => {
+    const dateA = new Date(
+      a.created_at || 0
+    ).getTime();
+
+    const dateB = new Date(
+      b.created_at || 0
+    ).getTime();
+
+    return dateB - dateA;
+  });
 
 
   /* =====================================================
      PAGINATION
   ===================================================== */
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      jobs.length / JOBS_PER_PAGE
-    )
+  const totalPages = Math.ceil(
+    sortedJobs.length / JOBS_PER_PAGE
   );
+
 
   const startIndex =
-    (currentPage - 1) *
-    JOBS_PER_PAGE;
+    (currentPage - 1) * JOBS_PER_PAGE;
 
-  const endIndex =
-    startIndex + JOBS_PER_PAGE;
 
-  const currentJobs = jobs.slice(
+  const currentJobs = sortedJobs.slice(
     startIndex,
-    endIndex
-  );
-
-
-  /* =====================================================
-     PAGE NUMBERS
-  ===================================================== */
-
-  const pageNumbers = Array.from(
-    { length: totalPages },
-    (_, index) => index + 1
+    startIndex + JOBS_PER_PAGE
   );
 
 
@@ -72,14 +73,11 @@ function CompanyRecentJobs({ jobs = [] }) {
       return "Date not available";
     }
 
-    return date.toLocaleDateString(
-      "en-IN",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }
-    );
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
 
@@ -93,33 +91,41 @@ function CompanyRecentJobs({ jobs = [] }) {
     ) {
       case "PUBLISHED":
         return {
-          icon:
-            "bg-emerald-100 text-emerald-600",
           badge:
             "bg-emerald-100 text-emerald-700",
+          card:
+            "border-emerald-100 bg-emerald-50/30",
+          icon:
+            "bg-emerald-100 text-emerald-600",
         };
 
       case "DRAFT":
         return {
-          icon:
-            "bg-amber-100 text-amber-600",
           badge:
             "bg-amber-100 text-amber-700",
+          card:
+            "border-amber-100 bg-amber-50/30",
+          icon:
+            "bg-amber-100 text-amber-600",
         };
 
       case "CLOSED":
         return {
-          icon:
-            "bg-rose-100 text-rose-600",
           badge:
             "bg-rose-100 text-rose-700",
+          card:
+            "border-rose-100 bg-rose-50/30",
+          icon:
+            "bg-rose-100 text-rose-600",
         };
 
       default:
         return {
-          icon:
-            "bg-slate-100 text-slate-600",
           badge:
+            "bg-slate-100 text-slate-600",
+          card:
+            "border-border bg-slate-50/40",
+          icon:
             "bg-slate-100 text-slate-600",
         };
     }
@@ -171,10 +177,43 @@ function CompanyRecentJobs({ jobs = [] }) {
 
 
   /* =====================================================
+     VIEW JOB
+  ===================================================== */
+
+  const handleViewJob = (job) => {
+    if (!companyId || !job?.id) {
+      return;
+    }
+
+    navigate(
+      `/admin/companies/${companyId}/jobs/${job.id}`
+    );
+  };
+
+
+  /* =====================================================
+     PAGE CHANGE
+  ===================================================== */
+
+  const goToPreviousPage = () => {
+    setCurrentPage((page) =>
+      Math.max(page - 1, 1)
+    );
+  };
+
+
+  const goToNextPage = () => {
+    setCurrentPage((page) =>
+      Math.min(page + 1, totalPages)
+    );
+  };
+
+
+  /* =====================================================
      EMPTY STATE
   ===================================================== */
 
-  if (jobs.length === 0) {
+  if (sortedJobs.length === 0) {
     return (
       <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
 
@@ -186,15 +225,16 @@ function CompanyRecentJobs({ jobs = [] }) {
 
           <div>
             <h2 className="text-sm font-bold text-text sm:text-base">
-              Jobs
+              Recent Jobs
             </h2>
 
             <p className="mt-0.5 text-xs text-text-secondary">
-              Job postings from this company
+              Latest job postings from this company
             </p>
           </div>
 
         </div>
+
 
         <div className="flex min-h-[260px] flex-col items-center justify-center px-6 text-center">
 
@@ -218,27 +258,13 @@ function CompanyRecentJobs({ jobs = [] }) {
 
 
   /* =====================================================
-     DISPLAY RANGE
-  ===================================================== */
-
-  const showingFrom = startIndex + 1;
-
-  const showingTo = Math.min(
-    endIndex,
-    jobs.length
-  );
-
-
-  /* =====================================================
      RENDER
   ===================================================== */
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* SECTION HEADER */}
 
       <div className="flex items-center justify-between gap-4 border-b border-border bg-slate-50 px-5 py-4">
 
@@ -251,145 +277,152 @@ function CompanyRecentJobs({ jobs = [] }) {
           <div className="min-w-0">
 
             <h2 className="text-sm font-bold text-text sm:text-base">
-              Jobs
+              Recent Jobs
             </h2>
 
             <p className="mt-0.5 text-xs text-text-secondary">
-              {jobs.length} job
-              {jobs.length !== 1
-                ? "s"
-                : ""}{" "}
-              found
+              Latest job postings from this company
             </p>
 
           </div>
 
         </div>
 
-        <p className="shrink-0 text-xs font-medium text-text-secondary">
-          Page {currentPage} of {totalPages}
-        </p>
+
+        {/* JOB COUNT */}
+
+        <span className="shrink-0 text-xs font-medium text-text-secondary">
+          {sortedJobs.length}{" "}
+          {sortedJobs.length === 1
+            ? "Job"
+            : "Jobs"}
+        </span>
 
       </div>
 
 
-      {/* =================================================
-          SINGLE TABLE
-      ================================================= */}
+      {/* JOB LIST */}
 
-      <div className="overflow-x-auto">
+      <div className="space-y-3 p-4 sm:p-5">
 
-        <table className="w-full min-w-[850px]">
+        {currentJobs.map((job) => {
 
-          <tbody>
+          const status =
+            String(
+              job.status || "UNKNOWN"
+            ).toUpperCase();
 
-            {currentJobs.map((job) => {
+          const styles =
+            getStatusStyles(status);
 
-              const status =
-                String(
-                  job.status || "UNKNOWN"
-                ).toUpperCase();
+          const applicationCount =
+            getApplicationCount(job);
 
-              const styles =
-                getStatusStyles(status);
+          const title =
+            job.title ||
+            job.job_title ||
+            "Untitled Job";
 
-              const applicationCount =
-                getApplicationCount(job);
+          const location =
+            job.location ||
+            job.job_location ||
+            "Location not specified";
 
-              const title =
-                job.title ||
-                job.job_title ||
-                "Untitled Job";
+          const department =
+            job.department ||
+            job.category ||
+            "Department not specified";
 
-              const location =
-                job.location ||
-                job.job_location ||
-                "Location not specified";
 
-              const department =
-                job.department ||
-                job.category ||
-                "Department not specified";
+          return (
+            <div
+              key={job.id}
+              className={`
+                group
+                rounded-xl
+                border
+                p-4
+                transition-all
+                duration-200
+                hover:-translate-y-0.5
+                hover:shadow-sm
+                sm:p-5
+                ${styles.card}
+              `}
+            >
 
-              return (
-                <tr
-                  key={job.id}
-                  className="border-t border-border transition hover:bg-slate-50/70 first:border-t-0"
-                >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-                  {/* JOB */}
 
-                  <td className="px-4 py-4 sm:px-5">
+                {/* JOB INFORMATION */}
 
-                    <div className="flex min-w-0 items-center gap-3">
+                <div className="flex min-w-0 items-start gap-3">
 
-                      <div
+                  <div
+                    className={`
+                      flex
+                      h-10
+                      w-10
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      ${styles.icon}
+                    `}
+                  >
+                    <BriefcaseBusiness
+                      size={18}
+                      strokeWidth={1.8}
+                    />
+                  </div>
+
+
+                  <div className="min-w-0 flex-1">
+
+                    <div className="flex flex-wrap items-center gap-2">
+
+                      <h3 className="min-w-0 truncate text-sm font-bold text-text sm:text-base">
+                        {title}
+                      </h3>
+
+
+                      <span
                         className={`
-                          flex
-                          h-9
-                          w-9
                           shrink-0
-                          items-center
-                          justify-center
-                          rounded-lg
-                          ${styles.icon}
+                          rounded-full
+                          px-2.5
+                          py-1
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          tracking-wide
+                          ${styles.badge}
                         `}
                       >
-                        <BriefcaseBusiness
-                          size={17}
-                          strokeWidth={1.8}
-                        />
-                      </div>
-
-                      <div className="min-w-0">
-
-                        <p className="truncate text-sm font-semibold text-text">
-                          {title}
-                        </p>
-
-                        <p className="mt-0.5 truncate text-xs text-text-secondary">
-                          {department}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </td>
-
-
-                  {/* LOCATION */}
-
-                  <td className="px-4 py-4 sm:px-5">
-
-                    <div className="flex min-w-0 items-center gap-2 text-sm text-text-secondary">
-
-                      <MapPin
-                        size={15}
-                        className="shrink-0"
-                      />
-
-                      <span className="truncate">
-                        {location}
+                        {getStatusLabel(status)}
                       </span>
 
                     </div>
 
-                  </td>
+
+                    {/* JOB META */}
+
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-text-secondary">
+
+                      <span className="inline-flex items-center gap-1.5">
+                        <BriefcaseBusiness size={13} />
+                        {department}
+                      </span>
 
 
-                  {/* CREATED DATE */}
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin size={13} />
+                        {location}
+                      </span>
 
-                  <td className="whitespace-nowrap px-4 py-4 sm:px-5">
 
-                    <div className="flex items-center gap-2 text-sm text-text-secondary">
-
-                      <CalendarDays
-                        size={15}
-                        className="shrink-0"
-                      />
-
-                      <span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarDays size={13} />
                         {formatDate(
                           job.created_at
                         )}
@@ -397,70 +430,63 @@ function CompanyRecentJobs({ jobs = [] }) {
 
                     </div>
 
-                  </td>
+                  </div>
+
+                </div>
 
 
-                  {/* APPLICATIONS */}
+                {/* APPLICATIONS + VIEW */}
 
-                  <td className="px-4 py-4 sm:px-5">
+                <div className="flex items-center justify-between gap-4 border-t border-border/70 pt-3 lg:border-0 lg:pt-0">
 
-                    <div className="flex items-center gap-2">
+                  {/* APPLICATION COUNT */}
 
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-primary">
+                  <div className="flex items-center gap-2 text-sm text-text-secondary">
 
-                        <Users size={15} />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80">
+                      <Users size={15} />
+                    </div>
 
-                      </div>
+                    <div>
 
-                      <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                        Applications
+                      </p>
 
-                        <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
-                          Applications
-                        </p>
-
-                        <p className="text-sm font-bold text-text">
-                          {applicationCount.toLocaleString(
-                            "en-IN"
-                          )}
-                        </p>
-
-                      </div>
+                      <p className="font-bold text-text">
+                        {applicationCount.toLocaleString(
+                          "en-IN"
+                        )}
+                      </p>
 
                     </div>
 
-                  </td>
+                  </div>
 
 
-                  {/* STATUS */}
+                  {/* VIEW BUTTON */}
 
-                  <td className="px-4 py-4 sm:px-5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleViewJob(job)
+                    }
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-white px-3 text-xs font-semibold text-primary transition hover:bg-primary hover:text-white"
+                  >
+                    View
 
-                    <span
-                      className={`
-                        inline-flex
-                        whitespace-nowrap
-                        rounded-full
-                        px-2.5
-                        py-1
-                        text-[10px]
-                        font-bold
-                        uppercase
-                        tracking-wide
-                        ${styles.badge}
-                      `}
-                    >
-                      {getStatusLabel(status)}
-                    </span>
+                    <ArrowUpRight
+                      size={15}
+                    />
+                  </button>
 
-                  </td>
+                </div>
 
-                </tr>
-              );
-            })}
+              </div>
 
-          </tbody>
-
-        </table>
+            </div>
+          );
+        })}
 
       </div>
 
@@ -469,113 +495,81 @@ function CompanyRecentJobs({ jobs = [] }) {
           PAGINATION
       ================================================= */}
 
-      <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end gap-2 border-t border-border bg-slate-50 px-4 py-3 sm:px-5">
 
-        {/* RESULT INFO */}
+          {/* CURRENT PAGE */}
 
-        <p className="text-xs text-text-secondary">
-
-          Showing{" "}
-
-          <span className="font-semibold text-text">
-            {showingFrom}
+          <span className="mr-1 text-xs font-medium text-text-secondary">
+            {currentPage} / {totalPages}
           </span>
 
-          {" - "}
 
-          <span className="font-semibold text-text">
-            {showingTo}
-          </span>
-
-          {" of "}
-
-          <span className="font-semibold text-text">
-            {jobs.length}
-          </span>
-
-        </p>
-
-
-        {/* PAGINATION */}
-
-        <div className="flex items-center justify-center gap-1.5">
-
-          {/* PREVIOUS */}
+          {/* LEFT ARROW */}
 
           <button
             type="button"
-            onClick={() =>
-              setCurrentPage((page) =>
-                Math.max(1, page - 1)
-              )
-            }
+            onClick={goToPreviousPage}
             disabled={currentPage === 1}
-            className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-white px-3 text-xs font-semibold text-text-secondary transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Previous page"
+            className={`
+              flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-lg
+              border
+              border-border
+              bg-white
+              transition
+              ${
+                currentPage === 1
+                  ? "cursor-not-allowed opacity-40"
+                  : "text-text hover:bg-primary hover:text-white"
+              }
+            `}
           >
-            <ChevronLeft size={15} />
-
-            <span className="hidden sm:inline">
-              Previous
-            </span>
+            <ArrowLeft size={15} />
           </button>
 
 
-          {/* PAGE NUMBERS */}
-
-          <div className="flex items-center gap-1">
-
-            {pageNumbers.map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() =>
-                  setCurrentPage(page)
-                }
-                className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-xs font-semibold transition ${
-                  currentPage === page
-                    ? "bg-primary text-white shadow-sm"
-                    : "border border-border bg-white text-text-secondary hover:bg-slate-50 hover:text-text"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-          </div>
-
-
-          {/* NEXT */}
+          {/* RIGHT ARROW */}
 
           <button
             type="button"
-            onClick={() =>
-              setCurrentPage((page) =>
-                Math.min(
-                  totalPages,
-                  page + 1
-                )
-              )
-            }
+            onClick={goToNextPage}
             disabled={
               currentPage === totalPages
             }
-            className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-white px-3 text-xs font-semibold text-text-secondary transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Next page"
+            className={`
+              flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-lg
+              border
+              border-border
+              bg-white
+              transition
+              ${
+                currentPage === totalPages
+                  ? "cursor-not-allowed opacity-40"
+                  : "text-text hover:bg-primary hover:text-white"
+              }
+            `}
           >
-
-            <span className="hidden sm:inline">
-              Next
-            </span>
-
-            <ChevronRight size={15} />
-
+            <ArrowRight size={15} />
           </button>
 
         </div>
-
-      </div>
+      )}
 
     </section>
   );
 }
+
 
 export default CompanyRecentJobs;
