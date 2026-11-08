@@ -461,10 +461,6 @@ class HRInterview(models.Model):
         default=InterviewStatus.SCHEDULED,
     )
 
-    meeting_link = models.URLField(
-        blank=True,
-        null=True,
-    )
 
     result = models.CharField(
         max_length=20,
@@ -477,6 +473,53 @@ class HRInterview(models.Model):
         blank=True,
         null=True,
     )
+    
+    class RescheduleReason(models.TextChoices):
+        INTERVIEWER_UNAVAILABLE = (
+            "INTERVIEWER_UNAVAILABLE",
+            "Interviewer Unavailable",
+        )
+        TECHNICAL_ISSUES = "TECHNICAL_ISSUES", "Technical Issues"
+        COMPANY_SCHEDULING_CONFLICT = (
+            "COMPANY_SCHEDULING_CONFLICT",
+            "Company Scheduling Conflict",
+        )
+        INTERNAL_OPERATIONAL_ISSUE = (
+            "INTERNAL_OPERATIONAL_ISSUE",
+            "Internal Operational Issue",
+        )
+        OTHER = "OTHER", "Other"
+
+    class CancellationReason(models.TextChoices):
+        JOB_POSITION_CLOSED = "JOB_POSITION_CLOSED", "Job Position Closed"
+        HIRING_PROCESS_STOPPED = (
+            "HIRING_PROCESS_STOPPED",
+            "Hiring Process Stopped",
+        )
+        COMPANY_DECIDED_NOT_TO_PROCEED = (
+            "COMPANY_DECIDED_NOT_TO_PROCEED",
+            "Company Decided Not to Proceed",
+        )
+        POSITION_FILLED = "POSITION_FILLED", "Position Filled"
+        DUPLICATE_INTERVIEW = "DUPLICATE_INTERVIEW", "Duplicate Interview"
+        OTHER = "OTHER", "Other"
+
+    cancellation_reason = models.CharField(
+        max_length=30,
+        choices=CancellationReason.choices,
+        blank=True,
+        null=True,
+    )
+
+    cancellation_note = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+    cancelled_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -484,3 +527,6 @@ class HRInterview(models.Model):
 
     def __str__(self):
         return f"HR Interview - Application {self.application_id}"
+
+
+

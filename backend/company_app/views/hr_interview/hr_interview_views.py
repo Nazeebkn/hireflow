@@ -12,6 +12,10 @@ from company_app.services.hr_interview.hr_interview_service import (
     HRInterviewService,
 )
 
+from company_app.serializers.hr_interview.hr_interview_cancel_serializer import (
+    HRInterviewCancelSerializer,
+)
+
 
 class CompanyHRInterviewScheduleAPIView(APIView):
 
@@ -37,6 +41,12 @@ class CompanyHRInterviewScheduleAPIView(APIView):
                 application_id=application_id,
                 scheduled_at=serializer.validated_data["scheduled_at"],
                 duration=serializer.validated_data["duration"],
+                reschedule_reason=serializer.validated_data.get(
+                    "reschedule_reason", ""
+                ),
+                reschedule_note=serializer.validated_data.get(
+                    "reschedule_note", ""
+                ),
             )
 
             response_serializer = HRInterviewSerializer(interview)
@@ -59,3 +69,44 @@ class CompanyHRInterviewScheduleAPIView(APIView):
                 {"message": str(error)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+
+class CompanyHRInterviewCancelAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, application_id):
+
+        serializer = HRInterviewCancelSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        company = getattr(
+            request.user,
+            "company_profile",
+            None,
+        )
+
+        interview = HRInterviewService.cancel_interview(
+            company=company,
+            application_id=application_id,
+            cancellation_reason=serializer.validated_data[
+                "cancellation_reason"
+            ],
+            cancellation_note=serializer.validated_data.get(
+                "cancellation_note", ""
+            ),
+        )
+
+        response_serializer = HRInterviewSerializer(interview)
+
+        return Response(
+            {
+                "message": "HR interview cancelled successfully.",
+                "interview": response_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )

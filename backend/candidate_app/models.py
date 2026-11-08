@@ -334,6 +334,16 @@ class Notification(models.Model):
             "HR_INTERVIEW_SCHEDULED",
             "HR Interview Scheduled",
         )
+        
+        HR_INTERVIEW_RESCHEDULED = (
+            "HR_INTERVIEW_RESCHEDULED",
+            "HR Interview Rescheduled",
+        )
+
+        HR_INTERVIEW_CANCELLED = (
+            "HR_INTERVIEW_CANCELLED",
+            "HR Interview Cancelled",
+        )
 
 
         # Company notifications

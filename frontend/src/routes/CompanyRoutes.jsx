@@ -11,6 +11,8 @@ import CompanyApplications from "../pages/company/CompanyApplications";
 import CompanyApplicationDetail from "../pages/company/CompanyApplicationDetail";
 import JobCandidates from "../pages/company/JobCandidates";
 import CompanySettings from "../pages/company/Settings/CompanySettings";
+import CompanyHRInterviews from "../pages/company/CompanyHRInterviews";
+
 
 function CompanyRoutes() {
   return (
@@ -69,6 +71,13 @@ function CompanyRoutes() {
         path="/company/settings"
         element={<CompanySettings />}
       />
+
+      <Route
+        path="/company/hr-interviews"
+        element={<CompanyHRInterviews />}
+      />
+
+
     </>
   );
 }

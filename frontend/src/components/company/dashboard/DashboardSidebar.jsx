@@ -1,9 +1,12 @@
+
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   BriefcaseBusiness,
   Users,
+  CalendarDays,
+  CreditCard,
   Settings,
   LogOut,
   X,
@@ -28,6 +31,16 @@ const sidebarItems = [
     label: "Applications",
     icon: Users,
     path: "/company/applications",
+  },
+  {
+    label: "HR Interviews",
+    icon: CalendarDays,
+    path: "/company/hr-interviews",
+  },
+  {
+    label: "Subscription",
+    icon: CreditCard,
+    path: "/company/subscription",
   },
 ];
 
@@ -69,8 +82,7 @@ function DashboardSidebar({ onNavigate }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-2 p-4">
-
+        <nav className="flex-1 space-y-2 overflow-y-auto p-4">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
 
@@ -95,25 +107,23 @@ function DashboardSidebar({ onNavigate }) {
               </NavLink>
             );
           })}
-
         </nav>
 
         {/* Settings & Logout */}
         <div className="space-y-2 border-t border-border p-4">
 
           {/* Settings */}
-      {/* Settings */}
-<NavLink
-  to="/company/settings"
-  onClick={onNavigate}
-  className={({ isActive }) =>
-    `flex items-center gap-3 rounded-xl px-4 py-3 transition ${
-      isActive
-        ? "bg-primary text-white"
-        : "text-text-secondary hover:bg-background"
-    }`
-  }
->
+          <NavLink
+            to="/company/settings"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-xl px-4 py-3 transition ${
+                isActive
+                  ? "bg-primary text-white"
+                  : "text-text-secondary hover:bg-background"
+              }`
+            }
+          >
             <Settings size={20} />
 
             <span className="font-medium">
@@ -133,22 +143,17 @@ function DashboardSidebar({ onNavigate }) {
               Logout
             </span>
           </button>
-
         </div>
-
       </aside>
 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
 
             {/* Modal Header */}
             <div className="flex items-start justify-between">
-
               <div className="flex items-center gap-3">
-
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <AlertCircle size={22} />
                 </div>
@@ -162,7 +167,6 @@ function DashboardSidebar({ onNavigate }) {
                     Confirm your logout
                   </p>
                 </div>
-
               </div>
 
               {!isLoggingOut && (
@@ -174,7 +178,6 @@ function DashboardSidebar({ onNavigate }) {
                   <X size={20} />
                 </button>
               )}
-
             </div>
 
             {/* Content */}
@@ -187,7 +190,6 @@ function DashboardSidebar({ onNavigate }) {
 
                 {/* Actions */}
                 <div className="mt-6 flex justify-end gap-3">
-
                   <button
                     type="button"
                     onClick={handleCancelLogout}
@@ -203,13 +205,10 @@ function DashboardSidebar({ onNavigate }) {
                   >
                     Logout
                   </button>
-
                 </div>
               </>
             ) : (
-              /* Loading */
               <div className="flex flex-col items-center justify-center py-8">
-
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Loader2
                     size={28}
@@ -224,10 +223,8 @@ function DashboardSidebar({ onNavigate }) {
                 <p className="mt-1 text-sm text-text-secondary">
                   Please wait a moment.
                 </p>
-
               </div>
             )}
-
           </div>
         </div>
       )}

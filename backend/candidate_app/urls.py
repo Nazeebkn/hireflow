@@ -51,6 +51,10 @@ from .views import (
     CareerProfileCompletionAPIView,
 )
 
+from candidate_app.candidate_views.hr_interview.candidate_hr_interview_views import (
+    CandidateHRInterviewListAPIView,
+)
+
 urlpatterns = [
 
     # ============================================================
@@ -263,4 +267,15 @@ urlpatterns = [
     AIInterviewReportAPIView.as_view(),
     name="ai-interview-report",
 ),
+    
+    
+    # ============================================================
+# HR INTERVIEWS
+# ============================================================
+
+    path(
+        "hr-interviews/",
+        CandidateHRInterviewListAPIView.as_view(),
+        name="candidate-hr-interviews",
+    ),
 ]
