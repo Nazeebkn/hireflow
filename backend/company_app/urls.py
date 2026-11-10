@@ -29,6 +29,8 @@ from company_app.views.notification.notification_views import (
 from company_app.views.hr_interview.hr_interview_views import (
     CompanyHRInterviewScheduleAPIView,
     CompanyHRInterviewCancelAPIView,
+    CompanyHRInterviewReportAPIView,
+    CompanyHRInterviewTokenAPIView,
 )
 from company_app.views.hr_interview.company_hr_interview_list_views import (
     CompanyHRInterviewListAPIView,
@@ -150,5 +152,17 @@ urlpatterns = [
         "applications/<int:application_id>/hr-interview/cancel/",
         CompanyHRInterviewCancelAPIView.as_view(),
         name="company-hr-interview-cancel",
+    ),
+    
+    path(
+        "applications/<int:application_id>/hr-interview/report/",
+        CompanyHRInterviewReportAPIView.as_view(),
+        name="company-hr-interview-report",
+    ),
+    
+    path(
+        "hr-interviews/<int:interview_id>/token/",
+        CompanyHRInterviewTokenAPIView.as_view(),
+        name="company-hr-interview-token",
     ),
 ]

@@ -26,6 +26,10 @@ import {
     startAIInterview,
 } from "../../services/candidate/candidateJobApplicationService";
 
+import {
+    getCandidateHRInterviews,
+} from "../../services/candidate/candidateHRInterviewService";
+
 
 const CandidateApplicationDetail = () => {
     const { applicationId } = useParams();
@@ -48,6 +52,13 @@ const CandidateApplicationDetail = () => {
     const [interviewReport, setInterviewReport] = useState(null);
     const [interviewReportLoading, setInterviewReportLoading] = useState(false);
     const [interviewReportError, setInterviewReportError] = useState("");
+
+    // HR INTERVIEW STATE (separate from the AI Interview state above)
+    const [hrInterview, setHrInterview] = useState(null);
+    const [hrInterviewLoading, setHrInterviewLoading] = useState(true);
+    const [hrInterviewError, setHrInterviewError] = useState("");
+    const [hrInterviewCountdown, setHrInterviewCountdown] = useState("");
+    const [hrInterviewJoinAvailable, setHrInterviewJoinAvailable] = useState(false);
 
 
     // =========================================================
@@ -203,11 +214,7 @@ const pipelineStages = useMemo(() => {
             label: "Overview",
             available: true,
         },
-        {
-            key: "timeline",
-            label: "Timeline",
-            available: false,
-        },
+      
         {
             key: "resume",
             label: "AI Resume Report",
@@ -220,7 +227,7 @@ const pipelineStages = useMemo(() => {
         },
         {
             key: "activity",
-            label: "Activity",
+            label: "HR Interview",
             available: true,
         },
     ];
@@ -261,6 +268,71 @@ const pipelineStages = useMemo(() => {
         };
 
         fetchApplication();
+    }, [applicationId]);
+
+
+    // =========================================================
+    // FETCH CANDIDATE HR INTERVIEW
+    // =========================================================
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchHRInterview = async (showLoading = false) => {
+            try {
+                if (isMounted) {
+                    if (showLoading) {
+                        setHrInterviewLoading(true);
+                    }
+                    setHrInterviewError("");
+                }
+
+                const response = await getCandidateHRInterviews();
+                const interviews = Array.isArray(response)
+                    ? response
+                    : Array.isArray(response?.results)
+                        ? response.results
+                        : [];
+
+                const matchingInterview = interviews.find(
+                    (item) => Number(item.application_id) === Number(applicationId)
+                ) || null;
+
+                if (isMounted) {
+                    setHrInterview(matchingInterview);
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to fetch candidate HR interview:",
+                    error?.response?.data || error
+                );
+
+                if (isMounted) {
+                    setHrInterviewError(
+                        error?.response?.data?.detail ||
+                        error?.response?.data?.message ||
+                        "Unable to load HR interview details. Please try again."
+                    );
+                }
+            } finally {
+                if (isMounted) {
+                    setHrInterviewLoading(false);
+                }
+            }
+        };
+
+        fetchHRInterview(true);
+
+        // Refresh periodically without replacing the current UI with a loader.
+        const refreshInterval = setInterval(
+            () => fetchHRInterview(false),
+            30000
+        );
+
+        return () => {
+            isMounted = false;
+            clearInterval(refreshInterval);
+        };
     }, [applicationId]);
 
 
@@ -771,6 +843,70 @@ const pipelineStages = useMemo(() => {
         application?.ai_interview?.scheduled_at,
         application?.ai_interview?.status,
     ]);
+
+
+    // =========================================================
+    // HR INTERVIEW JOIN WINDOW COUNTDOWN
+    // Join becomes available 10 minutes before scheduled time.
+    // =========================================================
+
+    useEffect(() => {
+        if (!hrInterview || hrInterview.status !== "SCHEDULED") {
+            setHrInterviewCountdown("");
+            setHrInterviewJoinAvailable(false);
+            return;
+        }
+
+        const scheduledTime = new Date(hrInterview.scheduled_at).getTime();
+
+        if (Number.isNaN(scheduledTime)) {
+            setHrInterviewCountdown("");
+            setHrInterviewJoinAvailable(false);
+            return;
+        }
+
+        const joinAvailableAt = scheduledTime - (10 * 60 * 1000);
+
+        const updateJoinWindow = () => {
+            const difference = joinAvailableAt - Date.now();
+
+            if (difference <= 0) {
+                setHrInterviewJoinAvailable(true);
+                setHrInterviewCountdown("You can join the interview now.");
+                return;
+            }
+
+            setHrInterviewJoinAvailable(false);
+
+            const totalSeconds = Math.floor(difference / 1000);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const timeText = days > 0
+                ? `${days}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`
+                : `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+
+            setHrInterviewCountdown(`Join will be available in ${timeText}.`);
+        };
+
+        updateJoinWindow();
+        const interval = setInterval(updateJoinWindow, 1000);
+
+        return () => clearInterval(interval);
+    }, [hrInterview?.scheduled_at, hrInterview?.status]);
+
+
+    // LiveKit meeting integration is intentionally not implemented in this task.
+    // Keep the join-window UI honest instead of pretending to open a meeting.
+const handleJoinHRInterview = () => {
+    if (!hrInterviewJoinAvailable || !hrInterview?.id) {
+        return;
+    }
+
+    navigate(`/candidate/hr-interviews/${hrInterview.id}/room`);
+};
 
 
     // =========================================================
@@ -2894,97 +3030,250 @@ const pipelineStages = useMemo(() => {
 
 
                                 {/* =================================================
-                                    ACTIVITY
+                                    HR INTERVIEW (renamed from Activity tab)
                                 ================================================= */}
 
-                                {activeTab ===
-                                    "activity" && (
-                                    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-
-                                        <div className="mb-6">
-
+                                {activeTab === "activity" && (
+                                    <section className="space-y-5">
+                                        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
                                             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
-                                                Application Activity
+                                                Company Interview
                                             </p>
-
                                             <h2 className="mt-1 text-lg font-bold text-text">
-                                                Activity History
+                                                HR Interview
                                             </h2>
-
                                             <p className="mt-1 text-sm text-text-secondary">
-                                                Recent activity related to this application.
+                                                Interview details and evaluation shared by the company will appear here.
                                             </p>
+                                        </section>
 
-                                        </div>
-
-
-                                        <div className="space-y-6">
-
-                                            <div className="flex gap-4">
-
-                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-
-                                                    <Check
-                                                        size={17}
-                                                    />
-
-                                                </div>
-
-
-                                                <div>
-
-                                                    <p className="text-sm font-semibold text-text">
-                                                        Application Submitted
+                                        {hrInterviewLoading && (
+                                            <section className="flex min-h-[220px] items-center justify-center rounded-2xl border border-border bg-surface p-8 shadow-sm">
+                                                <div className="text-center">
+                                                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                                                    <p className="mt-4 text-sm font-semibold text-text">
+                                                        Loading HR interview details...
                                                     </p>
-
-                                                    <p className="mt-1 text-xs text-text-secondary">
-                                                        {
-                                                            formatDateTime(
-                                                                application.applied_at
-                                                            )
-                                                        }
-                                                    </p>
-
                                                 </div>
+                                            </section>
+                                        )}
 
-                                            </div>
+                                        {!hrInterviewLoading && hrInterviewError && (
+                                            <section className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                                                <p className="text-sm font-semibold text-red-700">
+                                                    {hrInterviewError}
+                                                </p>
+                                            </section>
+                                        )}
 
+                                        {!hrInterviewLoading && !hrInterviewError && !hrInterview && (
+                                            <section className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface p-8 text-center">
+                                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                                                    <CalendarDays size={26} className="text-primary" />
+                                                </div>
+                                                <h3 className="mt-4 text-base font-bold text-text">
+                                                    No HR interview scheduled yet
+                                                </h3>
+                                                <p className="mt-2 max-w-md text-sm leading-6 text-text-secondary">
+                                                    The company has not scheduled an HR interview for this application. When it is scheduled, the details will appear here.
+                                                </p>
+                                            </section>
+                                        )}
 
-                                            {application.updated_at &&
-                                                application.updated_at !==
-                                                    application.applied_at && (
-                                                    <div className="flex gap-4">
-
-                                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-text-secondary">
-
-                                                            <Circle
-                                                                size={13}
-                                                            />
-
-                                                        </div>
-
-
+                                        {!hrInterviewLoading && !hrInterviewError && hrInterview?.status === "SCHEDULED" && hrInterview?.report_status !== "SUBMITTED" && (
+                                            <>
+                                                <section className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                                                    <div className="flex items-start gap-3">
+                                                        <CalendarDays size={21} className="mt-0.5 shrink-0 text-primary" />
                                                         <div>
-
-                                                            <p className="text-sm font-semibold text-text">
-                                                                Application Updated
+                                                            <h3 className="text-sm font-bold text-text">
+                                                                HR Interview Scheduled
+                                                            </h3>
+                                                            <p className="mt-1 text-xs leading-5 text-text-secondary">
+                                                                The company has scheduled your HR interview. Please be ready before the scheduled time.
                                                             </p>
-
-                                                            <p className="mt-1 text-xs text-text-secondary">
-                                                                {
-                                                                    formatDateTime(
-                                                                        application.updated_at
-                                                                    )
-                                                                }
-                                                            </p>
-
                                                         </div>
-
                                                     </div>
+                                                </section>
+
+                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                    <h3 className="text-base font-bold text-text">
+                                                        Interview Details
+                                                    </h3>
+                                                    <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                                        <div className="rounded-xl border border-border bg-background p-4">
+                                                            <div className="flex items-center gap-2 text-text-secondary">
+                                                                <CalendarDays size={16} className="text-primary" />
+                                                                <span className="text-xs font-semibold">Date</span>
+                                                            </div>
+                                                            <p className="mt-3 text-sm font-bold text-text">
+                                                                {formatDate(hrInterview.scheduled_at)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="rounded-xl border border-border bg-background p-4">
+                                                            <div className="flex items-center gap-2 text-text-secondary">
+                                                                <CalendarDays size={16} className="text-primary" />
+                                                                <span className="text-xs font-semibold">Time</span>
+                                                            </div>
+                                                            <p className="mt-3 text-sm font-bold text-text">
+                                                                {formatInterviewTime(hrInterview.scheduled_at)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="rounded-xl border border-border bg-background p-4">
+                                                            <div className="flex items-center gap-2 text-text-secondary">
+                                                                <CalendarDays size={16} className="text-primary" />
+                                                                <span className="text-xs font-semibold">Duration</span>
+                                                            </div>
+                                                            <p className="mt-3 text-sm font-bold text-text">
+                                                                {hrInterview.duration} minutes
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </section>
+
+                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                        <div>
+                                                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                                Interview Access
+                                                            </p>
+                                                            <h3 className="mt-1 text-base font-bold text-text">
+                                                                Ready for your HR interview?
+                                                            </h3>
+                                                            <p className="mt-2 text-xs leading-5 text-text-secondary">
+                                                                The Join button becomes available 10 minutes before the scheduled start time.
+                                                            </p>
+                                                            {hrInterviewCountdown && (
+                                                                <p className="mt-3 text-sm font-semibold text-primary" aria-live="polite">
+                                                                    {hrInterviewCountdown}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleJoinHRInterview}
+                                                            disabled={!hrInterviewJoinAvailable}
+                                                            className={`inline-flex shrink-0 items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition ${
+                                                                hrInterviewJoinAvailable
+                                                                    ? "bg-primary text-white hover:opacity-90"
+                                                                    : "cursor-not-allowed bg-background text-text-secondary opacity-70"
+                                                            }`}
+                                                        >
+                                                            Join Interview
+                                                        </button>
+                                                    </div>
+                                                    <p className="mt-4 rounded-lg border border-border bg-background p-3 text-xs leading-5 text-text-secondary">
+                                                        Live meeting access is not connected yet. The button currently indicates when the interview join window opens; it will not start a meeting until the meeting integration is implemented.
+                                                    </p>
+                                                </section>
+                                            </>
+                                        )}
+
+                                        {!hrInterviewLoading && !hrInterviewError && hrInterview?.status === "COMPLETED" && hrInterview?.report_status !== "SUBMITTED" && (
+                                            <section className="flex min-h-[250px] flex-col items-center justify-center rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
+                                                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                                                    <FileText size={26} className="text-primary" />
+                                                </div>
+                                                <h3 className="mt-4 text-base font-bold text-text">
+                                                    Evaluation in Progress
+                                                </h3>
+                                                <p className="mt-2 max-w-md text-sm leading-6 text-text-secondary">
+                                                    Your HR interview has been completed. The company is preparing the interview evaluation. The report will appear here once it is submitted.
+                                                </p>
+                                            </section>
+                                        )}
+
+                                        {!hrInterviewLoading && !hrInterviewError && hrInterview?.report_status === "SUBMITTED" && (
+                                            <section className="space-y-5">
+                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                        <div>
+                                                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
+                                                                Company Evaluation
+                                                            </p>
+                                                            <h3 className="mt-1 text-lg font-bold text-text">
+                                                                HR Interview Report
+                                                            </h3>
+                                                        </div>
+                                                        {hrInterview.result && (
+                                                            <span className={`w-fit rounded-full px-3 py-1.5 text-xs font-bold ${
+                                                                hrInterview.result === "HIRED"
+                                                                    ? "bg-primary/10 text-primary"
+                                                                    : "bg-red-50 text-red-600"
+                                                            }`}>
+                                                                {formatValue(hrInterview.result)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {hrInterview.feedback && (
+                                                        <div className="mt-5 rounded-xl border border-border bg-background p-4">
+                                                            <h4 className="text-sm font-bold text-text">Feedback</h4>
+                                                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-text-secondary">
+                                                                {hrInterview.feedback}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </section>
+
+                                                <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                                                    <h3 className="text-base font-bold text-text">
+                                                        Evaluation Ratings
+                                                    </h3>
+                                                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                                        {[
+                                                            { label: "Technical Skills", value: hrInterview.technical_skills_rating },
+                                                            { label: "Communication", value: hrInterview.communication_rating },
+                                                            { label: "Problem Solving", value: hrInterview.problem_solving_rating },
+                                                        ].filter((rating) => rating.value !== null && rating.value !== undefined).map((rating) => (
+                                                            <div key={rating.label} className="rounded-xl border border-border bg-background p-4">
+                                                                <p className="text-xs font-medium text-text-secondary">
+                                                                    {rating.label}
+                                                                </p>
+                                                                <p className="mt-2 text-2xl font-black text-primary">
+                                                                    {rating.value}
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    {[
+                                                        hrInterview.technical_skills_rating,
+                                                        hrInterview.communication_rating,
+                                                        hrInterview.problem_solving_rating,
+                                                    ].every((value) => value === null || value === undefined) && (
+                                                        <p className="mt-3 text-sm text-text-secondary">
+                                                            No evaluation ratings were provided.
+                                                        </p>
+                                                    )}
+                                                </section>
+                                            </section>
+                                        )}
+
+                                        {!hrInterviewLoading && !hrInterviewError && hrInterview?.status === "CANCELLED" && hrInterview?.report_status !== "SUBMITTED" && (
+                                            <section className="rounded-2xl border border-red-200 bg-red-50 p-6">
+                                                <h3 className="text-base font-bold text-red-700">
+                                                    HR Interview Cancelled
+                                                </h3>
+                                                <p className="mt-2 text-sm leading-6 text-red-700">
+                                                    The company has cancelled this HR interview. Please check your e-mail for further updates.
+                                                </p>
+                                                {hrInterview.cancellation_reason && (
+                                                    <p className="mt-3 text-xs text-red-700">
+                                                        Reason: {formatValue(hrInterview.cancellation_reason)}
+                                                    </p>
                                                 )}
+                                            </section>
+                                        )}
 
-                                        </div>
-
+                                        {!hrInterviewLoading && !hrInterviewError && hrInterview?.status === "MISSED" && hrInterview?.report_status !== "SUBMITTED" && (
+                                            <section className="rounded-2xl border border-border bg-surface p-6">
+                                                <h3 className="text-base font-bold text-text">
+                                                    HR Interview Marked as Missed
+                                                </h3>
+                                                <p className="mt-2 text-sm leading-6 text-text-secondary">
+                                                    This interview has been marked as missed. Please contact the company for further information.
+                                                </p>
+                                            </section>
+                                        )}
                                     </section>
                                 )}
 

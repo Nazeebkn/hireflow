@@ -336,6 +336,7 @@ class AIInterview(models.Model):
         null=True,
         blank=True,
     )
+    
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -344,7 +345,7 @@ class AIInterview(models.Model):
     def __str__(self):
         return f"AI Interview - Application {self.application_id}"
     
-    
+        
     
     
     
@@ -438,6 +439,10 @@ class HRInterview(models.Model):
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
         MISSED = "MISSED", "Missed"
+        
+    class ReportStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        SUBMITTED = "SUBMITTED", "Submitted"
 
     class InterviewResult(models.TextChoices):
         HIRED = "HIRED", "Hired"
@@ -460,6 +465,12 @@ class HRInterview(models.Model):
         choices=InterviewStatus.choices,
         default=InterviewStatus.SCHEDULED,
     )
+    
+    report_status = models.CharField(
+        max_length=20,
+        choices=ReportStatus.choices,
+        default=ReportStatus.PENDING,
+    )
 
 
     result = models.CharField(
@@ -470,6 +481,26 @@ class HRInterview(models.Model):
     )
 
     feedback = models.TextField(
+        blank=True,
+        null=True,
+    )
+    
+    technical_skills_rating = models.PositiveSmallIntegerField(
+    blank=True,
+    null=True,
+    )
+
+    communication_rating = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+    )
+
+    problem_solving_rating = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+    )
+
+    additional_notes = models.TextField(
         blank=True,
         null=True,
     )

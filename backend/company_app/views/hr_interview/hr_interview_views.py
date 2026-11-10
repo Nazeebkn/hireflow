@@ -16,6 +16,10 @@ from company_app.serializers.hr_interview.hr_interview_cancel_serializer import 
     HRInterviewCancelSerializer,
 )
 
+from company_app.serializers.hr_interview.hr_interview_report_serializer import (
+    HRInterviewReportSerializer,
+)
+
 
 class CompanyHRInterviewScheduleAPIView(APIView):
 
@@ -108,5 +112,83 @@ class CompanyHRInterviewCancelAPIView(APIView):
                 "message": "HR interview cancelled successfully.",
                 "interview": response_serializer.data,
             },
+            status=status.HTTP_200_OK,
+        )
+
+
+
+
+class CompanyHRInterviewReportAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, application_id):
+
+        serializer = HRInterviewReportSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        company = getattr(
+            request.user,
+            "company_profile",
+            None,
+        )
+
+        interview = HRInterviewService.submit_report(
+            company=company,
+            application_id=application_id,
+            report_data=serializer.validated_data,
+        )
+
+        return Response(
+            {
+                "message": "HR interview report submitted successfully.",
+                "interview": {
+                    "id": interview.id,
+                    "application_id": interview.application_id,
+                    "status": interview.status,
+                    "result": interview.result,
+                    **HRInterviewReportSerializer(interview).data,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+        
+        
+        
+
+class CompanyHRInterviewTokenAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, interview_id):
+        company = getattr(
+            request.user,
+            "company_profile",
+            None,
+        )
+
+        if not company:
+            return Response(
+                {"message": "Company profile not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        participant_name = (
+            f"{getattr(request.user, 'first_name', '')} "
+            f"{getattr(request.user, 'last_name', '')}"
+        ).strip() or request.user.get_username()
+
+        token_data = HRInterviewService.generate_company_interview_token(
+            company=company,
+            interview_id=interview_id,
+            participant_identity=f"company-{request.user.id}",
+            participant_name=participant_name,
+        )
+
+        return Response(
+            token_data,
             status=status.HTTP_200_OK,
         )

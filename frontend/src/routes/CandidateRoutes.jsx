@@ -10,6 +10,7 @@ import CandidateProfile from "../pages/candidate/CandidateProfile";
 import CandidateSettings from "../pages/candidate/settings/CandidateSettings";
 import AIInterviewPage from "../pages/candidate/ai-interview/AIInterviewPage";
 import AIInterviewSession from "../pages/candidate/ai-interview/AIInterviewSession";
+import HRInterviewRoom from "../pages/shared/hr-interview/HRInterviewRoom";
 
 function CandidateRoutes() {
   return (
@@ -46,6 +47,11 @@ function CandidateRoutes() {
       />
 
       <Route
+          path="hr-interviews/:interviewId/room"
+          element={<HRInterviewRoom />}
+      />
+
+      <Route
         path="profile"
         element={<CandidateProfile />}
       />
@@ -61,9 +67,13 @@ function CandidateRoutes() {
       />
 
       <Route
-    path="interviews/:interviewId/session"
-    element={<AIInterviewSession />}
-/>
+          path="interviews/:interviewId/session"
+          element={<AIInterviewSession />}
+      />
+
+
+
+
     </Route>
   );
 }

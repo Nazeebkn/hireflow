@@ -53,6 +53,7 @@ from .views import (
 
 from candidate_app.candidate_views.hr_interview.candidate_hr_interview_views import (
     CandidateHRInterviewListAPIView,
+    CandidateHRInterviewTokenAPIView,
 )
 
 urlpatterns = [
@@ -277,5 +278,11 @@ urlpatterns = [
         "hr-interviews/",
         CandidateHRInterviewListAPIView.as_view(),
         name="candidate-hr-interviews",
+    ),
+    
+    path(
+        "hr-interviews/<int:interview_id>/token/",
+        CandidateHRInterviewTokenAPIView.as_view(),
+        name="candidate-hr-interview-token",
     ),
 ]

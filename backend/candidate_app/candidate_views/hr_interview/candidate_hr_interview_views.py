@@ -6,7 +6,9 @@ from rest_framework.views import APIView
 from candidate_app.serializers.hr_interview.candidate_hr_interview_serializer import (
     CandidateHRInterviewSerializer,
 )
-from company_app.models import HRInterview
+from candidate_app.services.hr_interview.candidate_hr_interview_service import (
+    CandidateHRInterviewService,
+)
 
 
 class CandidateHRInterviewListAPIView(APIView):
@@ -19,20 +21,10 @@ class CandidateHRInterviewListAPIView(APIView):
             None,
         )
 
-        if not candidate:
-            return Response(
-                {"message": "Candidate profile not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         interviews = (
-            HRInterview.objects
-            .filter(application__candidate=candidate)
-            .select_related(
-                "application",
-                "application__job",
+            CandidateHRInterviewService.get_candidate_hr_interviews(
+                candidate
             )
-            .order_by("-scheduled_at")
         )
 
         serializer = CandidateHRInterviewSerializer(
@@ -42,5 +34,29 @@ class CandidateHRInterviewListAPIView(APIView):
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class CandidateHRInterviewTokenAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, interview_id):
+        candidate = getattr(
+            request.user,
+            "candidate_profile",
+            None,
+        )
+
+        token_data = (
+            CandidateHRInterviewService
+            .generate_candidate_interview_token(
+                candidate=candidate,
+                interview_id=interview_id,
+            )
+        )
+
+        return Response(
+            token_data,
             status=status.HTTP_200_OK,
         )

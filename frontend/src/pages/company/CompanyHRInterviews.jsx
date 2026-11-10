@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CalendarDays,
@@ -173,6 +174,7 @@ function CandidateAvatar({ item }) {
 }
 
 function CompanyHRInterviews() {
+  const navigate = useNavigate();
   const [companyProfile, setCompanyProfile] = useState(null);
   const [interviews, setInterviews] = useState({
     pending_schedule: [],
@@ -483,9 +485,12 @@ function CompanyHRInterviews() {
   );
 
   const handleJoinInterview = (item) => {
-    setJoinNotice(
-      `The interview for ${item.candidate_name || "this candidate"} is now eligible to start. LiveKit room integration has not been implemented yet.`
-    );
+    if (!item?.id) {
+      setError("Invalid HR interview ID.");
+      return;
+    }
+
+    navigate(`/company/hr-interviews/${item.id}/room`);
   };
 
   return (

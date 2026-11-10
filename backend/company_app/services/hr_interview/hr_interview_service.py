@@ -24,6 +24,14 @@ from django.conf import settings
 from django.core.mail import send_mail
 import logging
 
+import os
+
+from core.services.livekit_service import LiveKitService
+
+from company_app.repositories.hr_interview.hr_interview_repository import (
+    HRInterviewRepository,
+)
+
 logger = logging.getLogger(__name__)
 
 class HRInterviewService:
@@ -373,6 +381,72 @@ class HRInterviewService:
     
     
     @staticmethod
+    @transaction.atomic
+    def submit_report(company, application_id, report_data):
+
+        if not company:
+            raise NotFound("Company profile not found.")
+
+        interview = (
+            HRInterview.objects
+            .select_for_update()
+            .filter(
+                application__id=application_id,
+                application__job__company=company,
+            )
+            .first()
+        )
+
+        if not interview:
+            raise NotFound("HR interview not found.")
+
+        if interview.status == HRInterview.InterviewStatus.COMPLETED:
+            raise ValidationError(
+                "HR interview report has already been submitted."
+            )
+
+        if interview.status != HRInterview.InterviewStatus.SCHEDULED:
+            raise ValidationError(
+                "Report can only be submitted for scheduled interviews."
+            )
+
+        interview.result = report_data["result"]
+        interview.technical_skills_rating = (
+            report_data["technical_skills_rating"]
+        )
+        interview.communication_rating = (
+            report_data["communication_rating"]
+        )
+        interview.problem_solving_rating = (
+            report_data["problem_solving_rating"]
+        )
+        interview.feedback = report_data["feedback"].strip()
+        interview.additional_notes = (
+            report_data.get("additional_notes", "").strip()
+        )
+        interview.status = HRInterview.InterviewStatus.COMPLETED
+
+        interview.save(
+            update_fields=[
+                "result",
+                "technical_skills_rating",
+                "communication_rating",
+                "problem_solving_rating",
+                "feedback",
+                "additional_notes",
+                "status",
+                "updated_at",
+            ]
+        )
+
+        return interview
+  
+    
+    
+    
+    
+    
+    @staticmethod
     def send_hr_interview_email(
         recipient_email,
         subject,
@@ -391,3 +465,59 @@ class HRInterviewService:
                 "Failed to send HR interview email to %s",
                 recipient_email,
             )
+
+
+
+
+
+    @staticmethod
+    def generate_company_interview_token(
+        company,
+        interview_id,
+        participant_identity,
+        participant_name,
+    ):
+        if not company:
+            raise NotFound("Company profile not found.")
+
+        interview = HRInterviewRepository.get_interview_for_company(
+            interview_id=interview_id,
+            company=company,
+        )
+
+        if not interview:
+            raise NotFound("HR interview not found.")
+
+        if interview.status != HRInterview.InterviewStatus.SCHEDULED:
+            raise ValidationError(
+                "This interview is not available to join."
+            )
+
+        if timezone.now() < interview.scheduled_at:
+            raise ValidationError(
+                "Interview joining is not available yet."
+            )
+
+        livekit_url = os.getenv("LIVEKIT_URL")
+
+        if not livekit_url:
+            raise ValidationError(
+                "LiveKit server URL is not configured."
+            )
+
+        room_name = f"hr-interview-{interview.id}"
+
+        try:
+            token = LiveKitService.generate_token(
+                room_name=room_name,
+                identity=participant_identity,
+                participant_name=participant_name,
+            )
+        except ValueError as error:
+            raise ValidationError(str(error))
+
+        return {
+            "token": token,
+            "url": livekit_url,
+            "room_name": room_name,
+        }
