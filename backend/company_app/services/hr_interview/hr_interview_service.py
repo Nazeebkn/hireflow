@@ -70,7 +70,10 @@ class HRInterviewService:
         return {
             "pending_schedule": pending,
             "scheduled": interviews.filter(
-                status=HRInterview.InterviewStatus.SCHEDULED
+                status__in=[
+                    HRInterview.InterviewStatus.SCHEDULED,
+                    HRInterview.InterviewStatus.HR_NO_SHOW,
+                ]
             ).order_by("scheduled_at"),
             "completed": interviews.filter(
                 status=HRInterview.InterviewStatus.COMPLETED
@@ -488,12 +491,12 @@ class HRInterviewService:
         if not interview:
             raise NotFound("HR interview not found.")
 
-        if interview.status != HRInterview.InterviewStatus.SCHEDULED:
+        if interview.status not in (HRInterview.InterviewStatus.SCHEDULED, HRInterview.InterviewStatus.HR_NO_SHOW):
             raise ValidationError(
                 "This interview is not available to join."
             )
 
-        if timezone.now() < interview.scheduled_at:
+        if timezone.now() < interview.scheduled_at - timedelta(minutes=10):
             raise ValidationError(
                 "Interview joining is not available yet."
             )
@@ -517,7 +520,11 @@ class HRInterviewService:
             raise ValidationError(str(error))
 
         return {
-            "token": token,
-            "url": livekit_url,
-            "room_name": room_name,
-        }
+    "token": token,
+    "url": livekit_url,
+    "room_name": room_name,
+    "scheduled_at": interview.scheduled_at,
+    "candidate_joined_at": interview.candidate_joined_at,
+    "company_joined_at": interview.company_joined_at,
+    "status": interview.status,
+}

@@ -15,6 +15,11 @@ class CandidateHRInterviewSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    company_email = serializers.EmailField(
+        source="application.job.company.user.email",
+        read_only=True,
+    )
+
     status = serializers.ChoiceField(
         choices=HRInterview.InterviewStatus.choices,
         read_only=True,
@@ -44,6 +49,7 @@ class CandidateHRInterviewSerializer(serializers.ModelSerializer):
             "id",
             "application_id",
             "job_title",
+            "company_email",
             "scheduled_at",
             "duration",
             "status",
@@ -58,6 +64,13 @@ class CandidateHRInterviewSerializer(serializers.ModelSerializer):
             "cancelled_at",
             "created_at",
             "updated_at",
+            "candidate_joined_at",
+            "candidate_left_at",
+            "company_joined_at",
+            "company_left_at",
+            "candidate_last_joined_at",
+            "company_last_joined_at",
+            "contact_company_email_sent_at",
         ]
 
         read_only_fields = fields

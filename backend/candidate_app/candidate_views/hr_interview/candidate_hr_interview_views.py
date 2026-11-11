@@ -11,6 +11,7 @@ from candidate_app.services.hr_interview.candidate_hr_interview_service import (
 )
 
 
+
 class CandidateHRInterviewListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -58,5 +59,27 @@ class CandidateHRInterviewTokenAPIView(APIView):
 
         return Response(
             token_data,
+            status=status.HTTP_200_OK,
+        )
+
+
+
+class CandidateContactCompanyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, interview_id):
+        candidate = getattr(
+            request.user,
+            "candidate_profile",
+            None,
+        )
+
+        result = CandidateHRInterviewService.contact_company(
+            candidate=candidate,
+            interview_id=interview_id,
+        )
+
+        return Response(
+            result,
             status=status.HTTP_200_OK,
         )

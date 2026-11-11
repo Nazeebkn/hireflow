@@ -851,7 +851,10 @@ const pipelineStages = useMemo(() => {
     // =========================================================
 
     useEffect(() => {
-        if (!hrInterview || hrInterview.status !== "SCHEDULED") {
+        if (
+    !hrInterview ||
+    !["SCHEDULED", "HR_NO_SHOW"].includes(hrInterview.status)
+) {
             setHrInterviewCountdown("");
             setHrInterviewJoinAvailable(false);
             return;
@@ -3080,7 +3083,7 @@ const handleJoinHRInterview = () => {
                                             </section>
                                         )}
 
-                                        {!hrInterviewLoading && !hrInterviewError && hrInterview?.status === "SCHEDULED" && hrInterview?.report_status !== "SUBMITTED" && (
+                                        {!hrInterviewLoading && !hrInterviewError && ["SCHEDULED", "HR_NO_SHOW"].includes(hrInterview?.status)  && hrInterview?.report_status !== "SUBMITTED" && (
                                             <>
                                                 <section className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
                                                     <div className="flex items-start gap-3">
@@ -3159,11 +3162,12 @@ const handleJoinHRInterview = () => {
                                                                     : "cursor-not-allowed bg-background text-text-secondary opacity-70"
                                                             }`}
                                                         >
-                                                            Join Interview
+                                                            {hrInterview.candidate_last_joined_at
+                                                                ? "Rejoin Interview"
+                                                                : "Join Interview"}
                                                         </button>
                                                     </div>
                                                     <p className="mt-4 rounded-lg border border-border bg-background p-3 text-xs leading-5 text-text-secondary">
-                                                        Live meeting access is not connected yet. The button currently indicates when the interview join window opens; it will not start a meeting until the meeting integration is implemented.
                                                     </p>
                                                 </section>
                                             </>

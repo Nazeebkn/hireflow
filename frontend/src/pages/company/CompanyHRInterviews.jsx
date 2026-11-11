@@ -692,7 +692,11 @@ function CompanyHRInterviews() {
                   ? null
                   : getTimeRemaining(item.scheduled_at, now);
 
-                const joinEnabled = !isPending && remaining === 0;
+                const joinEnabled =
+                  !isPending &&
+                  ["SCHEDULED", "HR_NO_SHOW"].includes(item.status) &&
+                  remaining !== null &&
+                  remaining <= 10 * 60 * 1000;
 
                 const rescheduleAllowed =
                   !isPending &&
@@ -830,20 +834,24 @@ function CompanyHRInterviews() {
                               Cancel interview
                             </button>
 
+
                             <button
                               type="button"
                               onClick={() => handleJoinInterview(item)}
                               disabled={!joinEnabled}
                               title={
                                 joinEnabled
-                                  ? "Interview time has arrived"
-                                  : "Join will be available when the scheduled time arrives"
+                                  ? "Enter the interview room"
+                                  : "Join will be available 10 minutes before the scheduled time"
                               }
                               className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
                             >
                               <Video size={14} />
-                              Join interview
+                              {item.company_last_joined_at
+                                ? "Rejoin interview"
+                                : "Join interview"}
                             </button>
+
                           </div>
 
                           {!rescheduleAllowed &&

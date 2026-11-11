@@ -54,6 +54,7 @@ from .views import (
 from candidate_app.candidate_views.hr_interview.candidate_hr_interview_views import (
     CandidateHRInterviewListAPIView,
     CandidateHRInterviewTokenAPIView,
+    CandidateContactCompanyAPIView,
 )
 
 urlpatterns = [
@@ -241,35 +242,35 @@ urlpatterns = [
         CandidateNotificationDeleteAPIView.as_view(),
         name="candidate-notification-delete",
     ),
-    
+
     path(
     "interviews/<int:interview_id>/questions/",
     AIInterviewQuestionsAPIView.as_view(),
     name="ai-interview-questions",
 ),
-    
+
     path(
     "interviews/questions/<int:question_id>/answer/",
     SubmitAIInterviewAnswerAPIView.as_view(),
     name="submit-ai-interview-answer",
 ),
-    
-    
+
+
     path(
     "interviews/<int:interview_id>/complete/",
     CompleteAIInterviewAPIView.as_view(),
     name="complete-ai-interview",
 ),
-    
-    
-    
+
+
+
     path(
     "interviews/<int:interview_id>/report/",
     AIInterviewReportAPIView.as_view(),
     name="ai-interview-report",
 ),
-    
-    
+
+
     # ============================================================
 # HR INTERVIEWS
 # ============================================================
@@ -279,10 +280,16 @@ urlpatterns = [
         CandidateHRInterviewListAPIView.as_view(),
         name="candidate-hr-interviews",
     ),
-    
+
     path(
         "hr-interviews/<int:interview_id>/token/",
         CandidateHRInterviewTokenAPIView.as_view(),
         name="candidate-hr-interview-token",
+    ),
+
+        path(
+        "hr-interviews/<int:interview_id>/contact-company/",
+        CandidateContactCompanyAPIView.as_view(),
+        name="candidate-contact-company",
     ),
 ]

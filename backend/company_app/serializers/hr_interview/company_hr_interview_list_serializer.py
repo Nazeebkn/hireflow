@@ -42,6 +42,7 @@ class CompanyHRInterviewPendingSerializer(serializers.ModelSerializer):
         return report.overall_score if report else None
 
 
+
 class CompanyHRInterviewListSerializer(serializers.ModelSerializer):
     application_id = serializers.IntegerField(
         source="application.id",
@@ -70,6 +71,12 @@ class CompanyHRInterviewListSerializer(serializers.ModelSerializer):
             "scheduled_at",
             "duration",
             "status",
+            "candidate_joined_at",
+            "candidate_left_at",
+            "company_joined_at",
+            "company_left_at",
+            "candidate_last_joined_at",
+            "company_last_joined_at",
         ]
 
     def get_candidate_name(self, obj):

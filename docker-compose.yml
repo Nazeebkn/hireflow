@@ -27,3 +27,15 @@ services:
       - ./backend:/app
     depends_on:
       - redis
+
+
+  celery-beat:
+    build: ./backend
+    container_name: hireflow-celery-beat
+    command: celery -A hireflow beat --loglevel=info
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis

@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from core.views import livekit_webhook
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,5 +24,6 @@ urlpatterns = [
     path("api/candidate/", include('candidate_app.urls')),
     path("api/company/", include("company_app.urls")),
     path("api/admin/", include("admin_app.urls")),
+    path("api/webhooks/livekit/", livekit_webhook, name="livekit-webhook"),
 
 ]

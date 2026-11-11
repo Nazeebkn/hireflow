@@ -30,7 +30,11 @@ FRONTEND_URL = config("FRONTEND_URL")
 DEBUG = config("DEBUG", cast=bool)
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "drench-amply-outcast.ngrok-free.dev",
+]
 
 
 # Application definition

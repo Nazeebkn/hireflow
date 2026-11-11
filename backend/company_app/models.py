@@ -295,10 +295,10 @@ class AIResumeScreening(models.Model):
             f"Resume Screening - "
             f"Application {self.application.id}"
         )
-        
-        
-        
-        
+
+
+
+
 
 class AIInterview(models.Model):
 
@@ -336,7 +336,7 @@ class AIInterview(models.Model):
         null=True,
         blank=True,
     )
-    
+
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -344,11 +344,11 @@ class AIInterview(models.Model):
 
     def __str__(self):
         return f"AI Interview - Application {self.application_id}"
-    
-        
-    
-    
-    
+
+
+
+
+
 class JobQuestion(models.Model):
 
     class QuestionType(models.TextChoices):
@@ -427,11 +427,11 @@ class ApplicationAnswer(models.Model):
 
     def __str__(self):
         return f"Answer for Application {self.application_id}"
-    
-    
-    
-    
-    
+
+
+
+
+
 class HRInterview(models.Model):
 
     class InterviewStatus(models.TextChoices):
@@ -439,7 +439,8 @@ class HRInterview(models.Model):
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
         MISSED = "MISSED", "Missed"
-        
+        HR_NO_SHOW = "HR_NO_SHOW", "HR No Show"
+
     class ReportStatus(models.TextChoices):
         PENDING = "PENDING", "Pending"
         SUBMITTED = "SUBMITTED", "Submitted"
@@ -465,7 +466,42 @@ class HRInterview(models.Model):
         choices=InterviewStatus.choices,
         default=InterviewStatus.SCHEDULED,
     )
-    
+
+    candidate_joined_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    candidate_left_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    company_joined_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    company_left_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    candidate_last_joined_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    company_last_joined_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    contact_company_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
     report_status = models.CharField(
         max_length=20,
         choices=ReportStatus.choices,
@@ -484,7 +520,7 @@ class HRInterview(models.Model):
         blank=True,
         null=True,
     )
-    
+
     technical_skills_rating = models.PositiveSmallIntegerField(
     blank=True,
     null=True,
@@ -504,7 +540,7 @@ class HRInterview(models.Model):
         blank=True,
         null=True,
     )
-    
+
     class RescheduleReason(models.TextChoices):
         INTERVIEWER_UNAVAILABLE = (
             "INTERVIEWER_UNAVAILABLE",
